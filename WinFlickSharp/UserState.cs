@@ -50,7 +50,7 @@ namespace WinFlickSharp
         /// <summary>
         /// Contains the thumbnail of this progress update.
         /// </summary>
-        public Image Thumbnail { get; set; }
+        public Bitmap Thumbnail { get; set; }
 
         FlickrPhotoPanel lvi;
         /// <summary>

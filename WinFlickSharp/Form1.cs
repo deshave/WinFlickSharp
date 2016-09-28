@@ -43,7 +43,7 @@ namespace WinFlickSharp
             comboBoxContentType.DataSource = Enum.GetValues(typeof(ContentType));
             comboBoxSafetyLevel.DataSource = Enum.GetValues(typeof(SafetyLevel));
             comboBoxHiddenFromSearch.DataSource = Enum.GetValues(typeof(HiddenFromSearch));
-            listViewItems = new List<FlickrPhotoPanel>();
+            listViewItems = new List<FlickrPhotoPanel>(1000);
             pgd = new ProgressDialog();
             if (FlickrManager.OAuthToken != null && FlickrManager.OAuthToken.Token != null)
             {
@@ -75,7 +75,7 @@ namespace WinFlickSharp
             string status = string.Format("{0} item{1}", itemcount, itemcount != 1 ? "s" : "");
             if (selectedcount != 0)
             {
-                status += string.Format("     {0} item{1} selected     {2} bytes", selectedcount, selectedcount != 1 ? "s":"", StringUtilities.GetBytesReadable(selectedbytes));
+                status += string.Format("     {0} item{1} selected     {2}", selectedcount, selectedcount != 1 ? "s":"", StringUtilities.GetBytesReadable(selectedbytes));
             }
             toolStripStatusLabel3.Text = status;
         }
@@ -90,16 +90,20 @@ namespace WinFlickSharp
 
         private void ProcessFiles(string[] files)
         {
+            if (GenerateThumbsWorker.IsBusy)
+            {
+                GenerateThumbsWorker.CancelAsync();
+            }
             flowLayoutPanel1.Controls.Clear();
             imageList1.Images.Clear();
             //listViewItems.Clear();
-            backgroundWorker2.RunWorkerAsync(files);
+            populateWorker.RunWorkerAsync(files);
             pgd = new ProgressDialog();
             pgd.progressBar1.Style = ProgressBarStyle.Blocks;
             pgd.Text = "Generating thumbnails. This could take a while...";
             if (DialogResult.Cancel == pgd.ShowDialog())
             {
-                backgroundWorker2.CancelAsync();
+                populateWorker.CancelAsync();
             }
         }
 
@@ -215,7 +219,7 @@ namespace WinFlickSharp
         private void uploadToolStripMenuItem_Click(object sender, EventArgs e)
         {
             uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = false;
-            backgroundWorker1.RunWorkerAsync();
+            UploadWorker.RunWorkerAsync();
         }
 
         private void EnterCodeToolStripMenuItem_KeyUp(object sender, KeyEventArgs e)
@@ -467,13 +471,25 @@ namespace WinFlickSharp
             var fpp = (FlickrPhotoPanel)sender;
             if (ModifierKeys.HasFlag(Keys.Control))
             {
-                fpp.IsSelected = !fpp.IsSelected;
-
+                if (fpp.IsSelected)
+                {
+                    fpp.IsSelected = false;
+                    selectedcount -= 1;
+                    selectedbytes -= fpp.FileSizeBytes;
+                }
+                else
+                {
+                    fpp.IsSelected = true;
+                    selectedcount += 1;
+                    selectedbytes += fpp.FileSizeBytes;
+                }
             }
             else
             {
                 fpp.IsSelected = true;
                 UnselectAll(fpp);
+                selectedcount = 1;
+                selectedbytes = fpp.FileSizeBytes;
             }
             fpp.Invalidate();
             UpdateStatusLabel();
@@ -482,7 +498,7 @@ namespace WinFlickSharp
 #endregion
 
 #region Upload BackgroundWorker
-        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        private void uploadWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             var f = FlickrManager.GetAuthInstance();
             f.OnUploadProgress += new EventHandler<UploadProgressEventArgs>(Flickr_OnUploadProgress);
@@ -504,7 +520,7 @@ namespace WinFlickSharp
             }
         }
 
-        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void uploadWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             //
             // TODO: Indicate what's been uploaded
@@ -516,52 +532,35 @@ namespace WinFlickSharp
             toolStripButtonUpload.Enabled = true;
         }
 
-        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        private void uploadWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             toolStripProgressBar1.Value = e.ProgressPercentage;            
         }
 
         private void Flickr_OnUploadProgress(object sender, UploadProgressEventArgs e)
         {
-            backgroundWorker1.ReportProgress(e.ProcessPercentage);
+            UploadWorker.ReportProgress(e.ProcessPercentage);
             toolStripStatusLabel1.Text = e.FullFileName;
         }
         #endregion
 
 #region Populate List BackgroundWorker
-        private void backgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
+        private void populateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             string[] filenames = (string[])e.Argument;
             BackgroundWorker b = sender as BackgroundWorker;
             var us = new UserState();
             decimal i = 1;
             decimal count = filenames.Length;
-#if debug
-            Console.WriteLine(string.Format("Processing {0} files.", count));
-#endif
             var starttime = DateTime.Now;
             listViewItems.Clear();
-            Parallel.ForEach(filenames, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (file) =>
-//            foreach (var file in filenames)
+            Parallel.ForEach(filenames, new ParallelOptions { MaxDegreeOfParallelism = 3 }, (file) =>
             {
-#if debug
-                Console.WriteLine("Processing {0}", file);
-#endif
                 if (b.CancellationPending)
                 {
-#if debug
-                    Console.WriteLine("{0}:BackgroundWorker cancelled.", file);
-#endif
                     return;
                 }
                 var lvi = new FlickrPhotoPanel();
-                using (var bm = Image.FromFile(file))
-                {
-#if debug
-                    Console.WriteLine("Generating Thumbnail.");
-#endif
-                    lvi.Thumbnail = GraphicsUtilities.ResizeImage(bm, 120, 120, true);
-                }
                 lvi.Click += Lvi_Click;
                 lvi.DoubleClick += Lvi_DoubleClick;
                 lvi.ContextMenuStrip = this.contextMenuStrip1;
@@ -571,27 +570,11 @@ namespace WinFlickSharp
                 lvi.FileSizeBytes = new FileInfo(file).Length;
                 listViewItems.Add(lvi);
                 us.UpdateStatus = UpdateStatus.Success;
-                //us.LVI = lvi;
                 decimal percent = (i / count) * 100m;
-#if debug
-                Console.WriteLine("We are {0}% done with the list.", percent);
-#endif
                 decimal itemsremaining = count - i;
-#if debug
-                Console.WriteLine("{0} items remaining.", itemsremaining);
-#endif
                 var ticksperitem = DateTime.Now.Subtract(starttime).Ticks / i;
-#if debug
-                Console.WriteLine("Currently {0} ticks per item.", ticksperitem);
-#endif
                 var ticksremaining = ticksperitem * itemsremaining;
-#if debug
-                Console.WriteLine("Currently {0} ticks remaining.", ticksremaining);
-#endif
                 var timeremaining = new TimeSpan((long)ticksremaining);
-#if debug
-                Console.WriteLine("Currently {0} time remaining.", timeremaining.ToString());
-#endif
                 us.Message = string.Format("Processing File {1} of {2}.\r\n{0}% Completed.\r\nEst. Time Remaining: {3}{4}{5}\r\n{6}",
                     (int)percent,
                     i,
@@ -600,45 +583,27 @@ namespace WinFlickSharp
                     timeremaining.Minutes > 0 ? " " + timeremaining.Minutes.ToString() + " minutes" : "",
                     timeremaining.Seconds > 0 ? " " + timeremaining.Seconds.ToString() + " seconds" : "",
                     file);
-#if debug
-                Console.WriteLine("Reporting progress.");
-#endif
-                backgroundWorker2.ReportProgress((int)Math.Round(percent), us);
+                populateWorker.ReportProgress((int)Math.Round(percent), us);
                 i++;
-//            }
             });
-#if debug
-            Console.WriteLine("Done with files.");
-#endif
         }
 
-        private void backgroundWorker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        private void populateWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-//            var us = (UserState)e.UserState;
-//            BackgroundWorker b = sender as BackgroundWorker;
-//            if (b.CancellationPending)
-//            {
-#if debug
-                Console.WriteLine("BackgroundWorker2 ended.");
-#endif
-//            }
-//            if (us.UpdateStatus == UpdateStatus.Success)
-//            {
+            var us = (UserState)e.UserState;
+            BackgroundWorker b = sender as BackgroundWorker;
+            if (b.CancellationPending)
+            {
+                return;
+            }
+            if (us.UpdateStatus == UpdateStatus.Success)
+            {
                 pgd.progressBar1.Value = e.ProgressPercentage;
-//                pgd.Label = us.Message;
-#if debug
-                Console.WriteLine("Adding {0} to listViewItems.", us.LVI.Text);
-#endif
-                //if (us.LVI != null)
-                //    //listViewItems.Add(us.LVI);
-                //    flowLayoutPanel1.Controls.Add(us.LVI);
-#if debug
-                //Console.WriteLine("Adding {0} to imageList.", us.Thumbnail.Size.ToString());
-#endif
-            //}
+                pgd.Label = us.Message;
+            }
         }
 
-        private void backgroundWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void populateWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             pgd.Close();
             toolStripProgressBar1.Value = 0;
@@ -652,6 +617,33 @@ namespace WinFlickSharp
             }
             itemcount = flowLayoutPanel1.Controls.Count;
             UpdateStatusLabel();
+            GenerateThumbsWorker.RunWorkerAsync();
+        }
+        #endregion
+
+        #region Generate Thumbnails Worker
+        private void GenerateThumbsWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            var us = new UserState();
+
+            foreach (var item in flowLayoutPanel1.Controls)
+            {
+                var fpp = (FlickrPhotoPanel)item;
+                us.LVI = fpp;
+                using (var bm = Image.FromFile(fpp.FileName))
+                {
+                    us.Thumbnail = GraphicsUtilities.ResizeImage(bm, 120, 120, Color.Black, true);
+                }
+                GenerateThumbsWorker.ReportProgress(0, us);
+            }
+        }
+
+        private void GenerateThumbsWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            var us = (UserState)e.UserState;
+            var lvi = us.LVI;
+            lvi.Thumbnail = us.Thumbnail;
+            lvi.Invalidate();
         }
         #endregion
     }

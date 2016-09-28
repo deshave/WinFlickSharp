@@ -136,7 +136,7 @@ namespace PhotoPanel
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            var titleFont = new Font("Arial", 12);
+            var titleFont = new Font("Arial", 11);
             var textFont = new Font("Arial", 9);
             var b = new SolidBrush(this.BackColor);
             var r = new SolidBrush(this.ForeColor);
@@ -148,9 +148,9 @@ namespace PhotoPanel
             }
             e.Graphics.DrawImage(thumbnail, 5, 5, 120, 120);
             e.Graphics.DrawString(Title, titleFont, r, 126, 1);
-            e.Graphics.DrawString(Description, textFont, r, 126, 18);
-            e.Graphics.DrawString(filenameshort, textFont, r, 126, 32);
-            e.Graphics.DrawString(strfilesizebytes, textFont, r, 126, 46);
+            e.Graphics.DrawString(Description, textFont, r, 126, 16);
+            e.Graphics.DrawString(filenameshort, textFont, r, 126, 30);
+            e.Graphics.DrawString(strfilesizebytes, textFont, r, 126, 44);
         }
     }
 }

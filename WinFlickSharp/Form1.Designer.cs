@@ -66,13 +66,13 @@
             this.label3 = new System.Windows.Forms.Label();
             this.textBoxTitle = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.UploadWorker = new System.ComponentModel.BackgroundWorker();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripProgressBar1 = new System.Windows.Forms.ToolStripProgressBar();
             this.toolStripStatusLabel3 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.backgroundWorker2 = new System.ComponentModel.BackgroundWorker();
+            this.populateWorker = new System.ComponentModel.BackgroundWorker();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolStripButtonOpenFiles = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonOpenFolder = new System.Windows.Forms.ToolStripButton();
@@ -86,6 +86,7 @@
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.GenerateThumbsWorker = new System.ComponentModel.BackgroundWorker();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -221,7 +222,7 @@
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.aboutToolStripMenuItem.Text = "A&bout";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
@@ -242,12 +243,12 @@
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.removeToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(129, 48);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(118, 26);
             // 
             // removeToolStripMenuItem
             // 
             this.removeToolStripMenuItem.Name = "removeToolStripMenuItem";
-            this.removeToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
+            this.removeToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
             this.removeToolStripMenuItem.Text = "Remove";
             this.removeToolStripMenuItem.Click += new System.EventHandler(this.removeToolStripMenuItem_Click);
             // 
@@ -421,12 +422,12 @@
             this.label1.TabIndex = 0;
             this.label1.Text = "Title:";
             // 
-            // backgroundWorker1
+            // UploadWorker
             // 
-            this.backgroundWorker1.WorkerReportsProgress = true;
-            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
-            this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
-            this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
+            this.UploadWorker.WorkerReportsProgress = true;
+            this.UploadWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.uploadWorker_DoWork);
+            this.UploadWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.uploadWorker_ProgressChanged);
+            this.UploadWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.uploadWorker_RunWorkerCompleted);
             // 
             // statusStrip1
             // 
@@ -468,7 +469,7 @@
             this.toolStripStatusLabel1.BorderStyle = System.Windows.Forms.Border3DStyle.SunkenInner;
             this.toolStripStatusLabel1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(844, 20);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(619, 20);
             this.toolStripStatusLabel1.Spring = true;
             this.toolStripStatusLabel1.Text = "Ready.";
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -485,13 +486,13 @@
             this.toolStripStatusLabel2.Text = " ";
             this.toolStripStatusLabel2.ToolTipText = "You are not authenticated.";
             // 
-            // backgroundWorker2
+            // populateWorker
             // 
-            this.backgroundWorker2.WorkerReportsProgress = true;
-            this.backgroundWorker2.WorkerSupportsCancellation = true;
-            this.backgroundWorker2.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker2_DoWork);
-            this.backgroundWorker2.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker2_ProgressChanged);
-            this.backgroundWorker2.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker2_RunWorkerCompleted);
+            this.populateWorker.WorkerReportsProgress = true;
+            this.populateWorker.WorkerSupportsCancellation = true;
+            this.populateWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.populateWorker_DoWork);
+            this.populateWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.populateWorker_ProgressChanged);
+            this.populateWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.populateWorker_RunWorkerCompleted);
             // 
             // toolStrip1
             // 
@@ -619,6 +620,13 @@
             this.flowLayoutPanel1.TabIndex = 6;
             this.flowLayoutPanel1.Click += new System.EventHandler(this.flowLayoutPanel_Click);
             // 
+            // GenerateThumbsWorker
+            // 
+            this.GenerateThumbsWorker.WorkerReportsProgress = true;
+            this.GenerateThumbsWorker.WorkerSupportsCancellation = true;
+            this.GenerateThumbsWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.GenerateThumbsWorker_DoWork);
+            this.GenerateThumbsWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.GenerateThumbsWorker_ProgressChanged);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -681,13 +689,13 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.ComboBox comboBoxHiddenFromSearch;
         private System.Windows.Forms.Label label6;
-        private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.ComponentModel.BackgroundWorker UploadWorker;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripProgressBar toolStripProgressBar1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem removeToolStripMenuItem;
-        private System.ComponentModel.BackgroundWorker backgroundWorker2;
+        private System.ComponentModel.BackgroundWorker populateWorker;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.ToolStripButton toolStripButtonOpenFiles;
@@ -707,6 +715,7 @@
         private System.Windows.Forms.ToolStripMenuItem removeSelectedToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem clearListToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel3;
+        private System.ComponentModel.BackgroundWorker GenerateThumbsWorker;
     }
 }
 

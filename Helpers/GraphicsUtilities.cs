@@ -37,7 +37,7 @@ namespace Helpers
         /// <param name="height">The height to resize to.</param>
         /// <param name="maintainaspect">Whether or not to maintain aspect.</param>
         /// <returns>The resized image.</returns>
-        public static Bitmap ResizeImage(Image image, int width, int height, bool maintainaspect = true)
+        public static Bitmap ResizeImage(Image image, int width, int height, Color bgcolor, bool maintainaspect = true)
         {
             var destRect = new Rectangle(0, 0, width, height);
             var destImage = new Bitmap(width, height);
@@ -51,7 +51,7 @@ namespace Helpers
                 graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 graphics.SmoothingMode = SmoothingMode.HighQuality;
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                graphics.FillRectangle(Brushes.White, new Rectangle(0, 0, destImage.Width, destImage.Height));
+                graphics.FillRectangle(new SolidBrush(bgcolor), new Rectangle(0, 0, destImage.Width, destImage.Height));
 
                 if (maintainaspect)
                 {

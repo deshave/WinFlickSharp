@@ -150,15 +150,15 @@ namespace WinFlickSharp
             base.OnPaint(e);
             var textFont = new Font("Arial", 9);
             var f = new SolidBrush(this.ForeColor);
-            e.Graphics.DrawString(string.Join(";", Tags), textFont, f, 126, 60);
+            e.Graphics.DrawString(string.Join(";", Tags), textFont, f, 126, 58);
             var checkboxes = string.Format("{0}{1}{2}",
                 pub ? "Public" : "Private",
                 family ? "/Family" : "",
                 friends ? "/Friends" : "");
-            e.Graphics.DrawString(checkboxes, textFont, f, 126, 74);
-            e.Graphics.DrawString(type.ToString(), textFont, f, 126, 88);
-            e.Graphics.DrawString(level.ToString(), textFont, f, 126, 102);
-            e.Graphics.DrawString(hidden.ToString(), textFont, f, 126, 116);
+            e.Graphics.DrawString(checkboxes, textFont, f, 126, 72);
+            e.Graphics.DrawString(type.ToString(), textFont, f, 126, 86);
+            e.Graphics.DrawString(level.ToString(), textFont, f, 126, 100);
+            e.Graphics.DrawString(hidden.ToString(), textFont, f, 126, 114);
             
         }
     }

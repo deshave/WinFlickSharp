@@ -24,7 +24,7 @@ namespace WinFlickSharp
         private OAuthRequestToken requestToken;
         private AuthBrowser authWindow;
         private string[] extensions = Properties.Settings.Default.Extensions.Split(';');
-//        private List<FlickrPhotoPanel> listViewItems;
+        private List<FlickrPhotoPanel> listViewItems;
         private ProgressDialog pgd;
         private readonly string FormPreamble = Properties.Settings.Default.FormPreamble;
         private int itemcount = 0;
@@ -43,7 +43,7 @@ namespace WinFlickSharp
             comboBoxContentType.DataSource = Enum.GetValues(typeof(ContentType));
             comboBoxSafetyLevel.DataSource = Enum.GetValues(typeof(SafetyLevel));
             comboBoxHiddenFromSearch.DataSource = Enum.GetValues(typeof(HiddenFromSearch));
-            //listViewItems = new List<FlickrPhotoPanel>();
+            listViewItems = new List<FlickrPhotoPanel>();
             pgd = new ProgressDialog();
             if (FlickrManager.OAuthToken != null && FlickrManager.OAuthToken.Token != null)
             {
@@ -465,54 +465,17 @@ namespace WinFlickSharp
         private void Lvi_Click(object sender, EventArgs e)
         {
             var fpp = (FlickrPhotoPanel)sender;
-            //            fpp.IsSelected = true;
-            //            fpp.Invalidate();
-            var lvi = GetFirstSelectedFlickrPhotoPanel();
-            if (fpp.IsSelected)
+            if (ModifierKeys.HasFlag(Keys.Control))
             {
-                // we've reclicked a selected item, unselect it
-                fpp.IsSelected = false;
-                fpp.Invalidate();
-                selectedbytes -= fpp.FileSizeBytes;
+                fpp.IsSelected = !fpp.IsSelected;
+
             }
             else
             {
                 fpp.IsSelected = true;
-                fpp.Invalidate();
-                // clicked item is not selected
-                if (!ModifierKeys.HasFlag(Keys.Control))
-                {
-                    // control key is not down, this is the only selection
-                    UnselectAll(fpp);
-                    textBoxTitle.Text = fpp.Title;
-                    textBoxDescription.Text = fpp.Description;
-                    textBoxTags.Text = string.Join(";", fpp.Tags);
-                    checkBoxPublic.Checked = fpp.Public;
-                    checkBoxFamily.Checked = fpp.Family;
-                    checkBoxFriends.Checked = fpp.Friends;
-                    comboBoxContentType.SelectedItem = fpp.Type;
-                    comboBoxSafetyLevel.SelectedItem = fpp.Level;
-                    comboBoxHiddenFromSearch.SelectedItem = fpp.Hidden;
-                    textBoxTitle.Enabled = textBoxDescription.Enabled = textBoxTags.Enabled = checkBoxPublic.Enabled = checkBoxFamily.Enabled = checkBoxFriends.Enabled = comboBoxContentType.Enabled = comboBoxSafetyLevel.Enabled = comboBoxHiddenFromSearch.Enabled = true;
-                    selectedcount = 1;
-                    selectedbytes = (int)fpp.FileSizeBytes;
-                }
-                else
-                {
-                    // control key is down, we are adding this item to selection
-                    int[] indices = GetSelectedIndices(flowLayoutPanel1);
-                    int totalbytes = 0;
-                    // multiple selections, so we must empty the form
-                    textBoxTitle.Enabled = textBoxDescription.Enabled = textBoxTags.Enabled = checkBoxPublic.Enabled = checkBoxFamily.Enabled = checkBoxFriends.Enabled = comboBoxContentType.Enabled = comboBoxSafetyLevel.Enabled = comboBoxHiddenFromSearch.Enabled = false;
-                    selectedcount = indices.Length;
-                    foreach (var i in indices)
-                    {
-                        var myfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[i];
-                        totalbytes += (int)myfpp.FileSizeBytes;
-                    }
-                    selectedbytes = totalbytes;
-                }
+                UnselectAll(fpp);
             }
+            fpp.Invalidate();
             UpdateStatusLabel();
         }
         #endregion
@@ -577,8 +540,9 @@ namespace WinFlickSharp
             Console.WriteLine(string.Format("Processing {0} files.", count));
 #endif
             var starttime = DateTime.Now;
-            //listViewItems.Clear();
-            Parallel.ForEach(filenames, (file) =>
+            listViewItems.Clear();
+            Parallel.ForEach(filenames, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (file) =>
+//            foreach (var file in filenames)
             {
 #if debug
                 Console.WriteLine("Processing {0}", file);
@@ -605,9 +569,9 @@ namespace WinFlickSharp
                 lvi.Height = 130;
                 lvi.FileName = file;
                 lvi.FileSizeBytes = new FileInfo(file).Length;
-                //listViewItems.Add(lvi);
+                listViewItems.Add(lvi);
                 us.UpdateStatus = UpdateStatus.Success;
-                us.LVI = lvi;
+                //us.LVI = lvi;
                 decimal percent = (i / count) * 100m;
 #if debug
                 Console.WriteLine("We are {0}% done with the list.", percent);
@@ -641,6 +605,7 @@ namespace WinFlickSharp
 #endif
                 backgroundWorker2.ReportProgress((int)Math.Round(percent), us);
                 i++;
+//            }
             });
 #if debug
             Console.WriteLine("Done with files.");
@@ -649,38 +614,38 @@ namespace WinFlickSharp
 
         private void backgroundWorker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            var us = (UserState)e.UserState;
-            BackgroundWorker b = sender as BackgroundWorker;
-            if (b.CancellationPending)
-            {
+//            var us = (UserState)e.UserState;
+//            BackgroundWorker b = sender as BackgroundWorker;
+//            if (b.CancellationPending)
+//            {
 #if debug
                 Console.WriteLine("BackgroundWorker2 ended.");
 #endif
-            }
-            if (us.UpdateStatus == UpdateStatus.Success)
-            {
+//            }
+//            if (us.UpdateStatus == UpdateStatus.Success)
+//            {
                 pgd.progressBar1.Value = e.ProgressPercentage;
-                pgd.Label = us.Message;
+//                pgd.Label = us.Message;
 #if debug
                 Console.WriteLine("Adding {0} to listViewItems.", us.LVI.Text);
 #endif
-                if (us.LVI != null)
-                    //listViewItems.Add(us.LVI);
-                    flowLayoutPanel1.Controls.Add(us.LVI);
+                //if (us.LVI != null)
+                //    //listViewItems.Add(us.LVI);
+                //    flowLayoutPanel1.Controls.Add(us.LVI);
 #if debug
                 //Console.WriteLine("Adding {0} to imageList.", us.Thumbnail.Size.ToString());
 #endif
-            }
+            //}
         }
 
         private void backgroundWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             pgd.Close();
             toolStripProgressBar1.Value = 0;
-            //flowLayoutPanel1.SuspendLayout();
-            //listViewItems.Sort((x, y) => x.FileName.CompareTo(y.FileName));
-            //flowLayoutPanel1.Controls.AddRange(listViewItems.ToArray());
-            //flowLayoutPanel1.ResumeLayout();
+            flowLayoutPanel1.SuspendLayout();
+            listViewItems.Sort((x, y) => x.FileName.CompareTo(y.FileName));
+            flowLayoutPanel1.Controls.AddRange(listViewItems.ToArray());
+            flowLayoutPanel1.ResumeLayout();
             if (authenticated)
             {
                 uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = true;

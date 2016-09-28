@@ -24,7 +24,7 @@ namespace WinFlickSharp
         private OAuthRequestToken requestToken;
         private AuthBrowser authWindow;
         private string[] extensions = Properties.Settings.Default.Extensions.Split(';');
-        private List<FlickrPhotoPanel> listViewItems;
+//        private List<FlickrPhotoPanel> listViewItems;
         private ProgressDialog pgd;
         private readonly string FormPreamble = Properties.Settings.Default.FormPreamble;
         private int itemcount = 0;
@@ -43,7 +43,7 @@ namespace WinFlickSharp
             comboBoxContentType.DataSource = Enum.GetValues(typeof(ContentType));
             comboBoxSafetyLevel.DataSource = Enum.GetValues(typeof(SafetyLevel));
             comboBoxHiddenFromSearch.DataSource = Enum.GetValues(typeof(HiddenFromSearch));
-            listViewItems = new List<FlickrPhotoPanel>();
+            //listViewItems = new List<FlickrPhotoPanel>();
             pgd = new ProgressDialog();
             if (FlickrManager.OAuthToken != null && FlickrManager.OAuthToken.Token != null)
             {
@@ -72,7 +72,7 @@ namespace WinFlickSharp
 #region Private Methods
         private void UpdateStatusLabel()
         {
-            string status = string.Format("{0} items", itemcount);
+            string status = string.Format("{0} item{1}", itemcount, itemcount != 1 ? "s" : "");
             if (selectedcount != 0)
             {
                 status += string.Format("     {0} item{1} selected     {2} bytes", selectedcount, selectedcount != 1 ? "s":"", StringUtilities.GetBytesReadable(selectedbytes));
@@ -92,7 +92,7 @@ namespace WinFlickSharp
         {
             flowLayoutPanel1.Controls.Clear();
             imageList1.Images.Clear();
-            listViewItems.Clear();
+            //listViewItems.Clear();
             backgroundWorker2.RunWorkerAsync(files);
             pgd = new ProgressDialog();
             pgd.progressBar1.Style = ProgressBarStyle.Blocks;
@@ -273,7 +273,7 @@ namespace WinFlickSharp
             foreach (var item in deleted)
             {
                 flowLayoutPanel1.Controls.Remove(item);
-                listViewItems.Remove(item);
+                //listViewItems.Remove(item);
             }
             UnselectAll();
             flowLayoutPanel1.Invalidate();
@@ -288,7 +288,7 @@ namespace WinFlickSharp
 
         private void clearListToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            listViewItems.Clear();
+            //listViewItems.Clear();
             flowLayoutPanel1.Controls.Clear();
             uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = false;
 
@@ -570,16 +570,16 @@ namespace WinFlickSharp
         {
             string[] filenames = (string[])e.Argument;
             BackgroundWorker b = sender as BackgroundWorker;
+            var us = new UserState();
             decimal i = 1;
             decimal count = filenames.Length;
 #if debug
             Console.WriteLine(string.Format("Processing {0} files.", count));
 #endif
             var starttime = DateTime.Now;
-            listViewItems.Clear();
+            //listViewItems.Clear();
             Parallel.ForEach(filenames, (file) =>
             {
-                var us = new UserState();
 #if debug
                 Console.WriteLine("Processing {0}", file);
 #endif
@@ -590,26 +590,24 @@ namespace WinFlickSharp
 #endif
                     return;
                 }
-                Bitmap thumb;
+                var lvi = new FlickrPhotoPanel();
                 using (var bm = Image.FromFile(file))
                 {
 #if debug
                     Console.WriteLine("Generating Thumbnail.");
 #endif
-                    thumb = GraphicsUtilities.ResizeImage(bm, 120, 120, true);
+                    lvi.Thumbnail = GraphicsUtilities.ResizeImage(bm, 120, 120, true);
                 }
-                var lvi = new FlickrPhotoPanel();
                 lvi.Click += Lvi_Click;
                 lvi.DoubleClick += Lvi_DoubleClick;
                 lvi.ContextMenuStrip = this.contextMenuStrip1;
                 lvi.Width = 250;
                 lvi.Height = 130;
                 lvi.FileName = file;
-                lvi.Thumbnail = thumb;
-                var fi = new FileInfo(file);
-                lvi.FileSizeBytes = fi.Length;
-                listViewItems.Add(lvi);
+                lvi.FileSizeBytes = new FileInfo(file).Length;
+                //listViewItems.Add(lvi);
                 us.UpdateStatus = UpdateStatus.Success;
+                us.LVI = lvi;
                 decimal percent = (i / count) * 100m;
 #if debug
                 Console.WriteLine("We are {0}% done with the list.", percent);
@@ -667,7 +665,8 @@ namespace WinFlickSharp
                 Console.WriteLine("Adding {0} to listViewItems.", us.LVI.Text);
 #endif
                 if (us.LVI != null)
-                    listViewItems.Add(us.LVI);
+                    //listViewItems.Add(us.LVI);
+                    flowLayoutPanel1.Controls.Add(us.LVI);
 #if debug
                 //Console.WriteLine("Adding {0} to imageList.", us.Thumbnail.Size.ToString());
 #endif
@@ -678,12 +677,15 @@ namespace WinFlickSharp
         {
             pgd.Close();
             toolStripProgressBar1.Value = 0;
-            flowLayoutPanel1.SuspendLayout();
-            listViewItems.Sort((x, y) => x.FileName.CompareTo(y.FileName));
-            flowLayoutPanel1.Controls.AddRange(listViewItems.ToArray());
-            flowLayoutPanel1.ResumeLayout();
-            uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = true;
-            itemcount = listViewItems.Count;
+            //flowLayoutPanel1.SuspendLayout();
+            //listViewItems.Sort((x, y) => x.FileName.CompareTo(y.FileName));
+            //flowLayoutPanel1.Controls.AddRange(listViewItems.ToArray());
+            //flowLayoutPanel1.ResumeLayout();
+            if (authenticated)
+            {
+                uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = true;
+            }
+            itemcount = flowLayoutPanel1.Controls.Count;
             UpdateStatusLabel();
         }
         #endregion

@@ -1,0 +1,15 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="WinFlickSharp.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="OAuthToken" Type="FlickrNet.OAuthAccessToken" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="Extensions" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">.jpg;.tiff;.bmp;.jpeg;.png</Value>
+    </Setting>
+    <Setting Name="FormPreamble" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">WinFlickSharp</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

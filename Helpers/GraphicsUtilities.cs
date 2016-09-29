@@ -1,6 +1,8 @@
 ﻿using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Reflection;
+using System.Windows.Forms;
 
 namespace Helpers
 {
@@ -66,6 +68,16 @@ namespace Helpers
             }
 
             return destImage;
+        }
+        /// <summary>
+        /// Turns double buffering on or off in a control.
+        /// </summary>
+        /// <param name="control">The <see cref="Control"/> being sent a message about double buffering.</param>
+        /// <param name="enable">A <see cref="bool"/> indicating whether to turn double buffering on or off.</param>
+        public static void DoubleBuffered(this Control control, bool enable)
+        {
+            var doubleBufferPropertyInfo = control.GetType().GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            doubleBufferPropertyInfo.SetValue(control, enable, null);
         }
         #endregion
     }

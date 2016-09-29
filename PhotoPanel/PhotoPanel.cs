@@ -8,6 +8,20 @@ namespace PhotoPanel
 {
     public abstract partial class PhotoPanel : Control
     {
+    	protected Size originalsize;
+    	[Category("Appearance")]
+    	[Description("The size of the original image used to create the thumbnail.")]
+    	public Size OriginalSize
+    	{
+    		get
+    		{
+    			return originalsize;
+    		}
+    		set
+    		{
+    			originalsize = value;
+    		}
+    	}
         protected Bitmap thumbnail;
         [Category("Appearance")]
         [Description("The bitmap to draw as a thumbnail on the control.")]
@@ -186,7 +200,7 @@ namespace PhotoPanel
             e.Graphics.DrawString(Title, titleFont, textColor, 125, 2);
             e.Graphics.DrawString(Description, textFont, textColor, 126, 16);
             e.Graphics.DrawString(filenameshort, textFont, textColor, 126, 30);
-            e.Graphics.DrawString(strfilesizebytes, textFont, textColor, 126, 44);
+            e.Graphics.DrawString(strfilesizebytes + "   " + originalsize.Width + "x" + originalsize.Height, textFont, textColor, 126, 44);
         }
 
         protected abstract void RefreshToolTip();

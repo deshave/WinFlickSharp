@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using FlickrNet;
 using Helpers;
+using PhotoPanel;
 
 namespace WinFlickSharp
 {
@@ -45,24 +46,20 @@ namespace WinFlickSharp
             pgd = new ProgressDialog();
             if (FlickrManager.OAuthToken != null && FlickrManager.OAuthToken.Token != null)
             {
+                authenticated = true;
                 authenticateToolStripMenuItem.Enabled = false;
                 EnterCodeToolStripMenuItem.Enabled = false;
-                toolStripButtonAuthenticate.Enabled = false;
-                toolStripTextBoxEnterCode.Enabled = false;
                 toolStripStatusLabel2.Image = Properties.Resources._125_31;
                 toolStripStatusLabel2.ToolTipText = string.Format("You are authenticated as: {0}", FlickrManager.OAuthToken.FullName);
                 this.Text = FormPreamble + " - " + FlickrManager.OAuthToken.FullName;
             }
             else
             {
-                authenticated = true;
+                authenticated = false;
                 authenticateToolStripMenuItem.Enabled = true;
-                toolStripButtonAuthenticate.Enabled = true;
-                EnterCodeToolStripMenuItem.Enabled = true;
-                toolStripTextBoxEnterCode.Enabled = true;
                 toolStripStatusLabel2.Image = Properties.Resources._200;
                 toolStripStatusLabel2.ToolTipText = "You are not authenticated.";
-                this.Text = FormPreamble;
+                this.Text = FormPreamble + " - Not Authenticated";
             }
         }
         #endregion
@@ -93,8 +90,6 @@ namespace WinFlickSharp
                 GenerateThumbsWorker.CancelAsync();
             }
             flowLayoutPanel1.Controls.Clear();
-            imageList1.Images.Clear();
-            //listViewItems.Clear();
             populateWorker.RunWorkerAsync(files);
             pgd = new ProgressDialog();
             pgd.progressBar1.Style = ProgressBarStyle.Blocks;
@@ -196,6 +191,24 @@ namespace WinFlickSharp
             checkBoxPublic.Checked = checkBoxFamily.Checked = checkBoxFriends.Checked = false;
             comboBoxContentType.SelectedItem = comboBoxSafetyLevel.SelectedItem = comboBoxHiddenFromSearch.SelectedItem = null;
         }
+
+        private void Authenticate()
+        {
+            Flickr f = FlickrManager.GetInstance();
+            try
+            {
+                var accessToken = f.OAuthGetAccessToken(requestToken, EnterCodeToolStripMenuItem.Text);
+                FlickrManager.OAuthToken = accessToken;
+                Text = accessToken.FullName;
+                authWindow.Close();
+                EnterCodeToolStripMenuItem.Enabled = false;
+                authenticated = true;
+            }
+            catch (FlickrApiException ex)
+            {
+                MessageBox.Show("Failed to get access token. Error message: " + ex.Message);
+            }
+        }
         #endregion
 
 #region Event Handlers
@@ -206,7 +219,7 @@ namespace WinFlickSharp
             if (openFileDialog1.ShowDialog() == DialogResult.Cancel) return;
 
             var di = new DirectoryInfo(openFileDialog1.FileNames[0]);
-            toolStripTextBox1.Text = di.FullName;
+            toolStripTextBoxLocation.Text = di.FullName;
             ProcessFiles(openFileDialog1.FileNames);
         }
 
@@ -214,7 +227,7 @@ namespace WinFlickSharp
         {
             if (folderBrowserDialog1.ShowDialog() == DialogResult.Cancel) return;
 
-            toolStripTextBox1.Text = folderBrowserDialog1.SelectedPath;
+            toolStripTextBoxLocation.Text = folderBrowserDialog1.SelectedPath;
             ProcessFolder(folderBrowserDialog1.SelectedPath);
         }
         #endregion
@@ -229,6 +242,7 @@ namespace WinFlickSharp
         {
             if (FlickrManager.OAuthToken == null || FlickrManager.OAuthToken.Token == null)
             {
+                authenticateToolStripMenuItem.Enabled = false;
                 Flickr f = FlickrManager.GetInstance();
                 requestToken = f.OAuthGetRequestToken("oob");
 
@@ -254,22 +268,25 @@ namespace WinFlickSharp
         {
             if (e.KeyCode == Keys.Enter)
             {
-                Flickr f = FlickrManager.GetInstance();
-                try
+                Authenticate();
+            }
+        }
+
+        private void regenerateThumbnailToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ToolStripItem item = (sender as ToolStripItem);
+            if (item != null)
+            {
+                ContextMenuStrip owner = item.Owner as ContextMenuStrip;
+                if (owner != null)
                 {
-                    var accessToken = f.OAuthGetAccessToken(requestToken, EnterCodeToolStripMenuItem.Text);
-                    FlickrManager.OAuthToken = accessToken;
-                    Text = accessToken.FullName;
-                    authWindow.Close();
-                    EnterCodeToolStripMenuItem.Enabled = false;
-                    toolStripTextBoxEnterCode.Enabled = false;
-                    authenticateToolStripMenuItem.Enabled = false;
-                    toolStripButtonAuthenticate.Enabled = false;
-                    authenticated = true;
-                }
-                catch (FlickrApiException ex)
-                {
-                    MessageBox.Show("Failed to get access token. Error message: " + ex.Message);
+                    FlickrPhotoPanel fpp = (FlickrPhotoPanel)owner.SourceControl;
+                    using (var bm = Image.FromFile(fpp.FileName))
+                    {
+                        fpp.Thumbnail = GraphicsUtilities.ResizeImage(bm, 120, 120, Color.Black, true);
+                        fpp.OriginalSize = new System.Drawing.Size(bm.Width, bm.Height);
+                    }
+                    fpp.Invalidate();
                 }
             }
         }
@@ -305,6 +322,7 @@ namespace WinFlickSharp
             foreach (var item in deleted)
             {
                 flowLayoutPanel1.Controls.Remove(item);
+                item.Dispose();
                 //listViewItems.Remove(item);
             }
             UnselectAll();
@@ -320,7 +338,12 @@ namespace WinFlickSharp
 
         private void clearListToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //listViewItems.Clear();
+            foreach (var item in flowLayoutPanel1.Controls)
+            {
+                var fpp = (FlickrPhotoPanel)item;
+                fpp.Dispose();
+            }
+            GC.Collect();
             flowLayoutPanel1.Controls.Clear();
             uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = false;
 
@@ -415,12 +438,17 @@ namespace WinFlickSharp
         {
             if (e.KeyCode == Keys.Enter)
             {
-                ProcessFolder(toolStripTextBox1.Text);
+                ProcessFolder(toolStripTextBoxLocation.Text);
             }
         }
         #endregion
 
         #region ToolStrip
+        private void EnterCodeToolStripMenuItem_Enter(object sender, EventArgs e)
+        {
+            EnterCodeToolStripMenuItem.SelectAll();
+        }
+
         private void toolStripButtonOpenFiles_Click(object sender, EventArgs e)
         {
             openFileMenuItem_Click(sender, e);
@@ -446,11 +474,11 @@ namespace WinFlickSharp
             authenticateToolStripMenuItem_Click(sender, e);
         }
 
-        private void toolStripTextBox1_KeyUp(object sender, KeyEventArgs e)
+        private void toolStripTextBoxLocation_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                var me = (ToolStripMenuItem)sender;
+                var me = (ToolStripTextBox)sender;
                 EnterCodeToolStripMenuItem.Text = me.Text;
                 EnterCodeToolStripMenuItem_KeyUp(sender, e);
             }
@@ -461,15 +489,30 @@ namespace WinFlickSharp
             uploadToolStripMenuItem_Click(sender, e);
         }
 
-        private void toolStripButton1_Click(object sender, EventArgs e)
+        private void toolStripButtonAbout_Click(object sender, EventArgs e)
         {
             aboutToolStripMenuItem_Click(sender, e);
         }
         #endregion
 
         #region Form
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            Helpers.GraphicsUtilities.DoubleBuffered(flowLayoutPanel1, true);
+        }
+
+        private void toolStripTextBoxLocation_KeyUp_1(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                if (Directory.Exists(toolStripTextBoxLocation.Text))
+                    ProcessFolder(toolStripTextBoxLocation.Text);
+            }
+        }
+
         private void flowLayoutPanel_Click(object sender, EventArgs e)
         {
+            this.ActiveControl = GetFirstSelectedFlickrPhotoPanel();
             textBoxTitle.Text = textBoxDescription.Text = textBoxTags.Text = "";
             checkBoxFamily.Checked = checkBoxFriends.Checked = checkBoxPublic.Checked = false;
             comboBoxContentType.SelectedItem = comboBoxSafetyLevel.SelectedItem = comboBoxHiddenFromSearch.SelectedItem = null;
@@ -498,6 +541,7 @@ namespace WinFlickSharp
         private void Lvi_DoubleClick(object sender, EventArgs e)
         {
             var lvi = GetFirstSelectedFlickrPhotoPanel();
+            this.ActiveControl = lvi;
             if (lvi == null) return;
             Process.Start(lvi.FileName);
         }
@@ -505,6 +549,7 @@ namespace WinFlickSharp
         private void Lvi_Click(object sender, EventArgs e)
         {
             var fpp = (FlickrPhotoPanel)sender;
+            this.ActiveControl = fpp;
             if (ModifierKeys.HasFlag(Keys.Control))
             {
                 if (fpp.IsSelected)
@@ -538,8 +583,75 @@ namespace WinFlickSharp
             fpp.Invalidate();
             UpdateStatusLabel();
         }
+
+        private void Lvi_KeyUp(object sender, KeyEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.Right:
+                    int rindex = GetSelectedIndices(flowLayoutPanel1)[0];
+                    int next = rindex + 1 >= flowLayoutPanel1.Controls.Count ? 0 : rindex + 1;
+                    var fpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[rindex];
+                    UnselectAll(fpp);
+                    var nextfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[next];
+                    fpp.IsSelected = false;
+                    fpp.Invalidate();
+                    nextfpp.IsSelected = true;
+                    nextfpp.Invalidate();
+                    FillOutForm(nextfpp);
+                    flowLayoutPanel1.ScrollControlIntoView(nextfpp);
+                    break;
+                case Keys.Left:
+                    int lindex = GetSelectedIndices(flowLayoutPanel1)[0];
+                    int prev = lindex - 1 >= 0 ? lindex - 1 : flowLayoutPanel1.Controls.Count - 1;
+                    var lfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[lindex];
+                    UnselectAll(lfpp);
+                    var prevfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[prev];
+                    lfpp.IsSelected = false;
+                    lfpp.Invalidate();
+                    prevfpp.IsSelected = true;
+                    prevfpp.Invalidate();
+                    FillOutForm(prevfpp);
+                    flowLayoutPanel1.ScrollControlIntoView(prevfpp);
+                    break;
+                case Keys.Up:
+                    int uindex = GetSelectedIndices(flowLayoutPanel1)[0];
+                    var ufpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[uindex];
+                    UnselectAll(ufpp);
+                    int columns = flowLayoutPanel1.Width / ufpp.Width;
+                    int max = flowLayoutPanel1.Controls.Count - 1;
+                    int uprev = uindex - columns >= 0 ? uindex - columns : max - (max % columns) + uindex;
+                    if (uprev > max)
+                    {
+                        uprev -= columns;
+                    }
+                    var prevufpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[uprev];
+                    ufpp.IsSelected = false;
+                    ufpp.Invalidate();
+                    prevufpp.IsSelected = true;
+                    prevufpp.Invalidate();
+                    flowLayoutPanel1.ScrollControlIntoView(prevufpp);
+                    break;
+                case Keys.Down:
+                    int dindex = GetSelectedIndices(flowLayoutPanel1)[0];
+                    var dfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[dindex];
+                    UnselectAll(dfpp);
+                    int dcolumns = flowLayoutPanel1.Width / dfpp.Width;
+                    int dprev = dindex + dcolumns < flowLayoutPanel1.Controls.Count ? dindex + dcolumns : dindex % dcolumns;
+                    var prevdfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[dprev];
+                    dfpp.IsSelected = false;
+                    dfpp.Invalidate();
+                    prevdfpp.IsSelected = true;
+                    prevdfpp.Invalidate();
+                    flowLayoutPanel1.ScrollControlIntoView(prevdfpp);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         #endregion
-#endregion
+        #endregion
 
 #region Upload BackgroundWorker
         private void uploadWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -598,7 +710,7 @@ namespace WinFlickSharp
             decimal count = filenames.Length;
             var starttime = DateTime.Now;
             listViewItems.Clear();
-            Parallel.ForEach(filenames, new ParallelOptions { MaxDegreeOfParallelism = 3 }, (file) =>
+            Parallel.ForEach(filenames, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (file) =>
             {
                 if (b.CancellationPending)
                 {
@@ -607,6 +719,7 @@ namespace WinFlickSharp
                 var lvi = new FlickrPhotoPanel();
                 lvi.Click += Lvi_Click;
                 lvi.DoubleClick += Lvi_DoubleClick;
+                lvi.KeyUp += Lvi_KeyUp;
                 lvi.ContextMenuStrip = this.contextMenuStrip1;
                 lvi.Width = 250;
                 lvi.Height = 130;
@@ -670,17 +783,19 @@ namespace WinFlickSharp
         private void GenerateThumbsWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             var us = new UserState();
+            Parallel.ForEach<Control>(flowLayoutPanel1.Controls.Cast<Control>(), new ParallelOptions { MaxDegreeOfParallelism = 1 }, (item) =>
 
-            foreach (var item in flowLayoutPanel1.Controls)
+            //            foreach (var item in flowLayoutPanel1.Controls)
             {
                 var fpp = (FlickrPhotoPanel)item;
                 us.LVI = fpp;
                 using (var bm = Image.FromFile(fpp.FileName))
                 {
                     us.Thumbnail = GraphicsUtilities.ResizeImage(bm, 120, 120, Color.Black, true);
+                    us.OriginalSize = new System.Drawing.Size(bm.Width, bm.Height);
                 }
                 GenerateThumbsWorker.ReportProgress(0, us);
-            }
+            });
         }
 
         private void GenerateThumbsWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -688,8 +803,10 @@ namespace WinFlickSharp
             var us = (UserState)e.UserState;
             var lvi = us.LVI;
             lvi.Thumbnail = us.Thumbnail;
+            lvi.OriginalSize = us.OriginalSize;
             lvi.Invalidate();
         }
         #endregion
+
     }
 }

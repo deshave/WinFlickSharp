@@ -8,6 +8,7 @@
  */
 using System.Drawing;
 using System.Windows.Forms;
+using PhotoPanel;
 
 namespace WinFlickSharp
 {
@@ -51,6 +52,22 @@ namespace WinFlickSharp
         /// Contains the thumbnail of this progress update.
         /// </summary>
         public Bitmap Thumbnail { get; set; }
+
+        Size originalsize;
+        /// <summary>
+        /// Contains the size of the original image.
+        /// </summary>
+        public Size OriginalSize
+        {
+            get
+            {
+                return originalsize;
+            }
+            set
+            {
+                originalsize = value;
+            }
+        }
 
         FlickrPhotoPanel lvi;
         /// <summary>

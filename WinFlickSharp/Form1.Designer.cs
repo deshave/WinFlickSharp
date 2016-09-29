@@ -80,14 +80,13 @@
             this.toolStripButtonClearList = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonRemoveSelected = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripButtonAuthenticate = new System.Windows.Forms.ToolStripButton();
-            this.toolStripTextBoxEnterCode = new System.Windows.Forms.ToolStripTextBox();
             this.toolStripButtonUpload = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButtonAbout = new System.Windows.Forms.ToolStripButton();
+            this.toolStripTextBoxLocation = new System.Windows.Forms.ToolStripTextBox();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.GenerateThumbsWorker = new System.ComponentModel.BackgroundWorker();
-            this.toolStripTextBox1 = new System.Windows.Forms.ToolStripTextBox();
+            this.regenerateThumbnailToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -197,9 +196,11 @@
             // 
             // EnterCodeToolStripMenuItem
             // 
+            this.EnterCodeToolStripMenuItem.Enabled = false;
             this.EnterCodeToolStripMenuItem.Name = "EnterCodeToolStripMenuItem";
             this.EnterCodeToolStripMenuItem.Size = new System.Drawing.Size(100, 23);
             this.EnterCodeToolStripMenuItem.Text = "Enter Code";
+            this.EnterCodeToolStripMenuItem.Enter += new System.EventHandler(this.EnterCodeToolStripMenuItem_Enter);
             this.EnterCodeToolStripMenuItem.KeyUp += new System.Windows.Forms.KeyEventHandler(this.EnterCodeToolStripMenuItem_KeyUp);
             // 
             // uploadToolStripMenuItem
@@ -241,14 +242,15 @@
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.removeToolStripMenuItem});
+            this.removeToolStripMenuItem,
+            this.regenerateThumbnailToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(118, 26);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(195, 70);
             // 
             // removeToolStripMenuItem
             // 
             this.removeToolStripMenuItem.Name = "removeToolStripMenuItem";
-            this.removeToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.removeToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
             this.removeToolStripMenuItem.Text = "Remove";
             this.removeToolStripMenuItem.Click += new System.EventHandler(this.removeToolStripMenuItem_Click);
             // 
@@ -478,7 +480,7 @@
             this.toolStripStatusLabel1.BorderStyle = System.Windows.Forms.Border3DStyle.SunkenInner;
             this.toolStripStatusLabel1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(580, 20);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(611, 20);
             this.toolStripStatusLabel1.Spring = true;
             this.toolStripStatusLabel1.Text = "Ready.";
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -515,12 +517,10 @@
             this.toolStripButtonClearList,
             this.toolStripButtonRemoveSelected,
             this.toolStripSeparator2,
-            this.toolStripButtonAuthenticate,
-            this.toolStripTextBoxEnterCode,
             this.toolStripButtonUpload,
             this.toolStripSeparator3,
-            this.toolStripButton1,
-            this.toolStripTextBox1});
+            this.toolStripButtonAbout,
+            this.toolStripTextBoxLocation});
             this.toolStrip1.Location = new System.Drawing.Point(0, 24);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1126, 25);
@@ -577,24 +577,6 @@
             this.toolStripSeparator2.Name = "toolStripSeparator2";
             this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
             // 
-            // toolStripButtonAuthenticate
-            // 
-            this.toolStripButtonAuthenticate.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolStripButtonAuthenticate.Enabled = false;
-            this.toolStripButtonAuthenticate.Image = global::WinFlickSharp.Properties.Resources._125_31;
-            this.toolStripButtonAuthenticate.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButtonAuthenticate.Name = "toolStripButtonAuthenticate";
-            this.toolStripButtonAuthenticate.Size = new System.Drawing.Size(23, 22);
-            this.toolStripButtonAuthenticate.Text = "Authenticate...";
-            this.toolStripButtonAuthenticate.Click += new System.EventHandler(this.toolStripButtonAuthenticate_Click);
-            // 
-            // toolStripTextBoxEnterCode
-            // 
-            this.toolStripTextBoxEnterCode.Name = "toolStripTextBoxEnterCode";
-            this.toolStripTextBoxEnterCode.Size = new System.Drawing.Size(100, 25);
-            this.toolStripTextBoxEnterCode.Text = "Enter Code";
-            this.toolStripTextBoxEnterCode.KeyUp += new System.Windows.Forms.KeyEventHandler(this.toolStripTextBox1_KeyUp);
-            // 
             // toolStripButtonUpload
             // 
             this.toolStripButtonUpload.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
@@ -611,15 +593,23 @@
             this.toolStripSeparator3.Name = "toolStripSeparator3";
             this.toolStripSeparator3.Size = new System.Drawing.Size(6, 25);
             // 
-            // toolStripButton1
+            // toolStripButtonAbout
             // 
-            this.toolStripButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolStripButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton1.Image")));
-            this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton1.Name = "toolStripButton1";
-            this.toolStripButton1.Size = new System.Drawing.Size(23, 22);
-            this.toolStripButton1.Text = "toolStripButtonAbout";
-            this.toolStripButton1.Click += new System.EventHandler(this.toolStripButton1_Click);
+            this.toolStripButtonAbout.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonAbout.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonAbout.Image")));
+            this.toolStripButtonAbout.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonAbout.Name = "toolStripButtonAbout";
+            this.toolStripButtonAbout.Size = new System.Drawing.Size(23, 22);
+            this.toolStripButtonAbout.Text = "About...";
+            this.toolStripButtonAbout.Click += new System.EventHandler(this.toolStripButtonAbout_Click);
+            // 
+            // toolStripTextBoxLocation
+            // 
+            this.toolStripTextBoxLocation.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.toolStripTextBoxLocation.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystem;
+            this.toolStripTextBoxLocation.Name = "toolStripTextBoxLocation";
+            this.toolStripTextBoxLocation.Size = new System.Drawing.Size(566, 25);
+            this.toolStripTextBoxLocation.KeyUp += new System.Windows.Forms.KeyEventHandler(this.toolStripTextBoxLocation_KeyUp_1);
             // 
             // flowLayoutPanel1
             // 
@@ -632,7 +622,7 @@
             this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 52);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
             this.flowLayoutPanel1.Size = new System.Drawing.Size(845, 418);
-            this.flowLayoutPanel1.TabIndex = 6;
+            this.flowLayoutPanel1.TabIndex = 0;
             this.flowLayoutPanel1.Click += new System.EventHandler(this.flowLayoutPanel_Click);
             // 
             // GenerateThumbsWorker
@@ -642,13 +632,12 @@
             this.GenerateThumbsWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.GenerateThumbsWorker_DoWork);
             this.GenerateThumbsWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.GenerateThumbsWorker_ProgressChanged);
             // 
-            // toolStripTextBox1
+            // regenerateThumbnailToolStripMenuItem
             // 
-            this.toolStripTextBox1.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
-            this.toolStripTextBox1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystem;
-            this.toolStripTextBox1.Name = "toolStripTextBox1";
-            this.toolStripTextBox1.Size = new System.Drawing.Size(566, 25);
-            this.toolStripTextBox1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.toolStripTextBox1_KeyUp_1);
+            this.regenerateThumbnailToolStripMenuItem.Name = "regenerateThumbnailToolStripMenuItem";
+            this.regenerateThumbnailToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.regenerateThumbnailToolStripMenuItem.Text = "Regenerate Thumbnail";
+            this.regenerateThumbnailToolStripMenuItem.Click += new System.EventHandler(this.regenerateThumbnailToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -665,6 +654,7 @@
             this.MinimumSize = new System.Drawing.Size(500, 500);
             this.Name = "Form1";
             this.Text = "Form1";
+            this.Load += new System.EventHandler(this.Form1_Load);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyUp);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -727,11 +717,9 @@
         private System.Windows.Forms.ToolStripButton toolStripButtonClearList;
         private System.Windows.Forms.ToolStripButton toolStripButtonRemoveSelected;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
-        private System.Windows.Forms.ToolStripButton toolStripButtonAuthenticate;
-        private System.Windows.Forms.ToolStripTextBox toolStripTextBoxEnterCode;
         private System.Windows.Forms.ToolStripButton toolStripButtonUpload;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
-        private System.Windows.Forms.ToolStripButton toolStripButton1;
+        private System.Windows.Forms.ToolStripButton toolStripButtonAbout;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem selectAllToolStripMenuItem;
@@ -739,7 +727,8 @@
         private System.Windows.Forms.ToolStripMenuItem clearListToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel3;
         private System.ComponentModel.BackgroundWorker GenerateThumbsWorker;
-        private System.Windows.Forms.ToolStripTextBox toolStripTextBox1;
+        private System.Windows.Forms.ToolStripTextBox toolStripTextBoxLocation;
+        private System.Windows.Forms.ToolStripMenuItem regenerateThumbnailToolStripMenuItem;
     }
 }
 

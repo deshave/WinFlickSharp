@@ -5,9 +5,9 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Text;
 
-namespace WinFlickSharp
+namespace PhotoPanel
 {
-    public class FlickrPhotoPanel : PhotoPanel.PhotoPanel
+    public class FlickrPhotoPanel : PhotoPanel
     {
         private ToolTip tt;
         string[] tags;

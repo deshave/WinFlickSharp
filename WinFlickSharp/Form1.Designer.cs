@@ -87,6 +87,7 @@
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.GenerateThumbsWorker = new System.ComponentModel.BackgroundWorker();
+            this.toolStripTextBox1 = new System.Windows.Forms.ToolStripTextBox();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -235,7 +236,6 @@
             // 
             // folderBrowserDialog1
             // 
-            this.folderBrowserDialog1.RootFolder = System.Environment.SpecialFolder.MyPictures;
             this.folderBrowserDialog1.ShowNewFolderButton = false;
             // 
             // contextMenuStrip1
@@ -278,13 +278,14 @@
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Location = new System.Drawing.Point(863, 52);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(251, 284);
+            this.groupBox1.Size = new System.Drawing.Size(251, 277);
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Attributes";
             // 
             // comboBoxHiddenFromSearch
             // 
+            this.comboBoxHiddenFromSearch.Enabled = false;
             this.comboBoxHiddenFromSearch.FormattingEnabled = true;
             this.comboBoxHiddenFromSearch.Location = new System.Drawing.Point(86, 249);
             this.comboBoxHiddenFromSearch.Name = "comboBoxHiddenFromSearch";
@@ -294,6 +295,7 @@
             // 
             // comboBoxSafetyLevel
             // 
+            this.comboBoxSafetyLevel.Enabled = false;
             this.comboBoxSafetyLevel.FormattingEnabled = true;
             this.comboBoxSafetyLevel.Location = new System.Drawing.Point(86, 222);
             this.comboBoxSafetyLevel.Name = "comboBoxSafetyLevel";
@@ -303,6 +305,7 @@
             // 
             // comboBoxContentType
             // 
+            this.comboBoxContentType.Enabled = false;
             this.comboBoxContentType.FormattingEnabled = true;
             this.comboBoxContentType.Location = new System.Drawing.Point(86, 195);
             this.comboBoxContentType.Name = "comboBoxContentType";
@@ -313,6 +316,7 @@
             // checkBoxPublic
             // 
             this.checkBoxPublic.AutoSize = true;
+            this.checkBoxPublic.Enabled = false;
             this.checkBoxPublic.Location = new System.Drawing.Point(86, 125);
             this.checkBoxPublic.Name = "checkBoxPublic";
             this.checkBoxPublic.Size = new System.Drawing.Size(55, 17);
@@ -324,6 +328,7 @@
             // checkBoxFriends
             // 
             this.checkBoxFriends.AutoSize = true;
+            this.checkBoxFriends.Enabled = false;
             this.checkBoxFriends.Location = new System.Drawing.Point(86, 172);
             this.checkBoxFriends.Name = "checkBoxFriends";
             this.checkBoxFriends.Size = new System.Drawing.Size(60, 17);
@@ -335,6 +340,7 @@
             // checkBoxFamily
             // 
             this.checkBoxFamily.AutoSize = true;
+            this.checkBoxFamily.Enabled = false;
             this.checkBoxFamily.Location = new System.Drawing.Point(86, 148);
             this.checkBoxFamily.Name = "checkBoxFamily";
             this.checkBoxFamily.Size = new System.Drawing.Size(55, 17);
@@ -345,6 +351,7 @@
             // 
             // textBoxDescription
             // 
+            this.textBoxDescription.Enabled = false;
             this.textBoxDescription.Location = new System.Drawing.Point(86, 39);
             this.textBoxDescription.Multiline = true;
             this.textBoxDescription.Name = "textBoxDescription";
@@ -381,6 +388,7 @@
             // 
             // textBoxTags
             // 
+            this.textBoxTags.Enabled = false;
             this.textBoxTags.Location = new System.Drawing.Point(86, 99);
             this.textBoxTags.Name = "textBoxTags";
             this.textBoxTags.Size = new System.Drawing.Size(159, 20);
@@ -407,6 +415,7 @@
             // 
             // textBoxTitle
             // 
+            this.textBoxTitle.Enabled = false;
             this.textBoxTitle.Location = new System.Drawing.Point(86, 13);
             this.textBoxTitle.Name = "textBoxTitle";
             this.textBoxTitle.Size = new System.Drawing.Size(159, 20);
@@ -469,21 +478,24 @@
             this.toolStripStatusLabel1.BorderStyle = System.Windows.Forms.Border3DStyle.SunkenInner;
             this.toolStripStatusLabel1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(619, 20);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(580, 20);
             this.toolStripStatusLabel1.Spring = true;
             this.toolStripStatusLabel1.Text = "Ready.";
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // toolStripStatusLabel2
             // 
+            this.toolStripStatusLabel2.AutoSize = false;
             this.toolStripStatusLabel2.BorderSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)((((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Top) 
             | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right) 
             | System.Windows.Forms.ToolStripStatusLabelBorderSides.Bottom)));
-            this.toolStripStatusLabel2.BorderStyle = System.Windows.Forms.Border3DStyle.SunkenInner;
+            this.toolStripStatusLabel2.BorderStyle = System.Windows.Forms.Border3DStyle.SunkenOuter;
             this.toolStripStatusLabel2.Image = global::WinFlickSharp.Properties.Resources._200;
+            this.toolStripStatusLabel2.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(30, 20);
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(38, 20);
             this.toolStripStatusLabel2.Text = " ";
+            this.toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.toolStripStatusLabel2.ToolTipText = "You are not authenticated.";
             // 
             // populateWorker
@@ -507,7 +519,8 @@
             this.toolStripTextBoxEnterCode,
             this.toolStripButtonUpload,
             this.toolStripSeparator3,
-            this.toolStripButton1});
+            this.toolStripButton1,
+            this.toolStripTextBox1});
             this.toolStrip1.Location = new System.Drawing.Point(0, 24);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1126, 25);
@@ -614,6 +627,8 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.flowLayoutPanel1.AutoScroll = true;
+            this.flowLayoutPanel1.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.flowLayoutPanel1.ForeColor = System.Drawing.SystemColors.ButtonFace;
             this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 52);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
             this.flowLayoutPanel1.Size = new System.Drawing.Size(845, 418);
@@ -626,6 +641,14 @@
             this.GenerateThumbsWorker.WorkerSupportsCancellation = true;
             this.GenerateThumbsWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.GenerateThumbsWorker_DoWork);
             this.GenerateThumbsWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.GenerateThumbsWorker_ProgressChanged);
+            // 
+            // toolStripTextBox1
+            // 
+            this.toolStripTextBox1.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
+            this.toolStripTextBox1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystem;
+            this.toolStripTextBox1.Name = "toolStripTextBox1";
+            this.toolStripTextBox1.Size = new System.Drawing.Size(566, 25);
+            this.toolStripTextBox1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.toolStripTextBox1_KeyUp_1);
             // 
             // Form1
             // 
@@ -716,6 +739,7 @@
         private System.Windows.Forms.ToolStripMenuItem clearListToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel3;
         private System.ComponentModel.BackgroundWorker GenerateThumbsWorker;
+        private System.Windows.Forms.ToolStripTextBox toolStripTextBox1;
     }
 }
 

@@ -1,5 +1,4 @@
-﻿//#define debug
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -19,7 +18,6 @@ namespace WinFlickSharp
     /// </summary>
     public partial class Form1 : Form
     {
-
 #region Private Properties
         private OAuthRequestToken requestToken;
         private AuthBrowser authWindow;
@@ -33,7 +31,7 @@ namespace WinFlickSharp
         private bool authenticated = false;
         #endregion
 
- #region Constructor
+#region Constructor
         /// <summary>
         /// Constructs a new <see cref="Form1"/> object.
         /// </summary>
@@ -166,6 +164,38 @@ namespace WinFlickSharp
             selectedbytes = (int)totalbytes;
             UpdateStatusLabel();
         }
+
+        private void ProcessFolder(string folder)
+        {
+            var di = new DirectoryInfo(folder);
+            FileInfo[] files =
+                di.EnumerateFiles()
+                     .Where(f => extensions.Contains(f.Extension.ToLower()))
+                     .ToArray();
+            ProcessFiles(files.Select(f => f.FullName).ToArray());
+        }
+
+        private void FillOutForm(FlickrPhotoPanel fpp)
+        {
+            textBoxTitle.Text = fpp.Title;
+            textBoxDescription.Text = fpp.Description;
+            textBoxTags.Text = string.Join(";", fpp.Tags);
+            checkBoxPublic.Checked = fpp.IsPublic;
+            checkBoxFamily.Checked = fpp.VisibleToFamily;
+            checkBoxFriends.Checked = fpp.VisibleToFriends;
+            comboBoxContentType.SelectedItem = fpp.ContentType;
+            comboBoxSafetyLevel.SelectedItem = fpp.SafetyLevel;
+            comboBoxHiddenFromSearch.SelectedItem = fpp.HiddenFromSearch;
+            textBoxTitle.Enabled = textBoxDescription.Enabled = textBoxTags.Enabled = checkBoxPublic.Enabled = checkBoxFamily.Enabled = checkBoxFriends.Enabled = comboBoxContentType.Enabled = comboBoxSafetyLevel.Enabled = comboBoxHiddenFromSearch.Enabled = true;
+        }
+
+        private void ClearForm()
+        {
+            textBoxTitle.Enabled = textBoxDescription.Enabled = textBoxTags.Enabled = checkBoxPublic.Enabled = checkBoxFamily.Enabled = checkBoxFriends.Enabled = comboBoxContentType.Enabled = comboBoxSafetyLevel.Enabled = comboBoxHiddenFromSearch.Enabled = false;
+            textBoxTitle.Text = textBoxDescription.Text = textBoxTags.Text = "";
+            checkBoxPublic.Checked = checkBoxFamily.Checked = checkBoxFriends.Checked = false;
+            comboBoxContentType.SelectedItem = comboBoxSafetyLevel.SelectedItem = comboBoxHiddenFromSearch.SelectedItem = null;
+        }
         #endregion
 
 #region Event Handlers
@@ -175,6 +205,8 @@ namespace WinFlickSharp
             openFileDialog1.InitialDirectory = Environment.SpecialFolder.MyPictures.ToString();
             if (openFileDialog1.ShowDialog() == DialogResult.Cancel) return;
 
+            var di = new DirectoryInfo(openFileDialog1.FileNames[0]);
+            toolStripTextBox1.Text = di.FullName;
             ProcessFiles(openFileDialog1.FileNames);
         }
 
@@ -182,12 +214,8 @@ namespace WinFlickSharp
         {
             if (folderBrowserDialog1.ShowDialog() == DialogResult.Cancel) return;
 
-            var di = new DirectoryInfo(folderBrowserDialog1.SelectedPath);
-            FileInfo[] files =
-                di.EnumerateFiles()
-                     .Where(f => extensions.Contains(f.Extension.ToLower()))
-                     .ToArray();
-            ProcessFiles(files.Select(f => f.FullName).ToArray());
+            toolStripTextBox1.Text = folderBrowserDialog1.SelectedPath;
+            ProcessFolder(folderBrowserDialog1.SelectedPath);
         }
         #endregion
 
@@ -333,7 +361,7 @@ namespace WinFlickSharp
         {
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
-            lvi.Public = checkBoxPublic.Checked;
+            lvi.IsPublic = checkBoxPublic.Checked;
             lvi.Invalidate();
         }
 
@@ -341,7 +369,7 @@ namespace WinFlickSharp
         {
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
-            lvi.Family = checkBoxFamily.Checked;
+            lvi.VisibleToFamily = checkBoxFamily.Checked;
             lvi.Invalidate();
         }
 
@@ -349,7 +377,7 @@ namespace WinFlickSharp
         {
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
-            lvi.Friends = checkBoxFriends.Checked;
+            lvi.VisibleToFriends = checkBoxFriends.Checked;
             lvi.Invalidate();
         }
 
@@ -359,7 +387,7 @@ namespace WinFlickSharp
             if (lvi == null) return;
             ContentType cresult;
             if (Enum.TryParse(comboBoxContentType.Text, out cresult))
-            lvi.Type = cresult;
+            lvi.ContentType = cresult;
             lvi.Invalidate();
         }
 
@@ -369,7 +397,7 @@ namespace WinFlickSharp
             if (lvi == null) return;
             SafetyLevel cresult;
             if (Enum.TryParse(comboBoxSafetyLevel.Text, out cresult))
-                lvi.Level = cresult;
+                lvi.SafetyLevel = cresult;
             lvi.Invalidate();
         }
 
@@ -379,8 +407,16 @@ namespace WinFlickSharp
             if (lvi == null) return;
             HiddenFromSearch cresult;
             if (Enum.TryParse(comboBoxHiddenFromSearch.Text, out cresult))
-                lvi.Hidden = cresult;
+                lvi.HiddenFromSearch = cresult;
             lvi.Invalidate();
+        }
+
+        private void toolStripTextBox1_KeyUp_1(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                ProcessFolder(toolStripTextBox1.Text);
+            }
         }
         #endregion
 
@@ -491,6 +527,14 @@ namespace WinFlickSharp
                 selectedcount = 1;
                 selectedbytes = fpp.FileSizeBytes;
             }
+            if (selectedcount == 1)
+            {
+                FillOutForm(fpp);
+            }
+            else
+            {
+                ClearForm();
+            }
             fpp.Invalidate();
             UpdateStatusLabel();
         }
@@ -513,9 +557,9 @@ namespace WinFlickSharp
                         lv.Title,
                         lv.Description,
                         string.Join(";", lv.Tags),
-                        lv.Public,
-                        lv.Family,
-                        lv.Friends);
+                        lv.IsPublic,
+                        lv.VisibleToFamily,
+                        lv.VisibleToFriends);
                 }
             }
         }
@@ -569,6 +613,7 @@ namespace WinFlickSharp
                 lvi.FileName = file;
                 lvi.FileSizeBytes = new FileInfo(file).Length;
                 listViewItems.Add(lvi);
+                var tt = new ToolTip();
                 us.UpdateStatus = UpdateStatus.Success;
                 decimal percent = (i / count) * 100m;
                 decimal itemsremaining = count - i;
@@ -621,7 +666,7 @@ namespace WinFlickSharp
         }
         #endregion
 
-        #region Generate Thumbnails Worker
+#region Generate Thumbnails Worker
         private void GenerateThumbsWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             var us = new UserState();

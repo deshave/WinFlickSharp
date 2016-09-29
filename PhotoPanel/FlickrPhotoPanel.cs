@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ComponentModel;
 using FlickrNet;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Text;
 
 namespace WinFlickSharp
 {
     public class FlickrPhotoPanel : PhotoPanel.PhotoPanel
     {
+        private ToolTip tt;
         string[] tags;
         [Category("Appearance")]
         [Description("The tags of the picture on the control.")]
@@ -24,125 +22,136 @@ namespace WinFlickSharp
             set
             {
                 tags = value;
+                RefreshToolTip();
             }
         }
 
-        bool pub;
+        bool ispublic;
         [Category("Appearance")]
         [Description("Whether or not the picture is public.")]
-        public bool Public
+        public bool IsPublic
         {
             get
             {
-                return pub;
+                return ispublic;
             }
             set
             {
-                pub = value;
+                ispublic = value;
+                RefreshToolTip();
             }
         }
 
-        bool family;
+        bool visibletofamily;
         [Category("Appearance")]
         [Description("Whether or not the picture is visible by family.")]
-        public bool Family
+        public bool VisibleToFamily
         {
             get
             {
-                return family;
+                return visibletofamily;
             }
             set
             {
-                family = value;
+                visibletofamily = value;
+                RefreshToolTip();
             }            
         }
 
-        bool friends;
+        bool visibletofriends;
         [Category("Appearance")]
         [Description("Whether or not the picture is visible by friends.")]
-        public bool Friends
+        public bool VisibleToFriends
         {
             get
             {
-                return friends;
+                return visibletofriends;
             }
             set
             {
-                friends = value;
+                visibletofriends = value;
+                RefreshToolTip();
             }
         }
 
-        ContentType type;
+        ContentType contenttype;
         [Category("Appearance")]
         [Description("The content type of the picture.")]
-        public ContentType Type
+        public ContentType ContentType
         {
             get
             {
-                return type;
+                return contenttype;
             }
             set
             {
-                type = value;
+                contenttype = value;
+                RefreshToolTip();
             }
         }
 
-        SafetyLevel level;
+        SafetyLevel safetylevel;
         [Category("Appearance")]
         [Description("The safety level of the picture.")]
-        public SafetyLevel Level
+        public SafetyLevel SafetyLevel
         {
             get
             {
-                return level;
+                return safetylevel;
             }
             set
             {
-                level = value;
+                safetylevel = value;
+                RefreshToolTip();
             }
         }
 
-        HiddenFromSearch hidden;
+        HiddenFromSearch hiddenfromsearch;
         [Category("Appearance")]
         [Description("Whether or not the picture is hidden from search.")]
-        public HiddenFromSearch Hidden
+        public HiddenFromSearch HiddenFromSearch
         {
             get
             {
-                return hidden;
+                return hiddenfromsearch;
             }
             set
             {
-                hidden = value;
+                hiddenfromsearch = value;
+                RefreshToolTip();
             }
         }
 
-        public FlickrPhotoPanel() : base()
+        public FlickrPhotoPanel() : base("","","",0,null,false)
         {
-            Title = "";
-            Description = "";
-            FileName = "";
-            FileSizeBytes = 0;
+            tt = new ToolTip();
+            title = "";
+            description = "";
+            filename = "";
+            filesizebytes = 0;
             thumbnail = new Bitmap(120, 120);
             tags = new string[]{ };
-            pub = false;
-            family = true;
-            friends = true;
-            type = ContentType.Photo;
-            level = SafetyLevel.Safe;
-            hidden = HiddenFromSearch.Hidden;
-            IsSelected = false;
+            ispublic = false;
+            visibletofamily = true;
+            visibletofriends = true;
+            contenttype = ContentType.Photo;
+            safetylevel = SafetyLevel.Safe;
+            hiddenfromsearch = HiddenFromSearch.Hidden;
+            isselected = false;
+            RefreshToolTip();
         }
 
-        public FlickrPhotoPanel(string title, string desc, string file, string filebytes, Bitmap thumb, string[] intags, bool ispublic, bool isfamily, bool isfriends, ContentType intype, SafetyLevel inlevel, HiddenFromSearch inhidden, bool isselected) : base(title, desc, file, filebytes, thumb, isselected)
+        public FlickrPhotoPanel(string title, string desc, string file, string filebytes, Bitmap thumb, string[] intags, bool ispub, bool isfamily, bool isfriends, ContentType intype, SafetyLevel inlevel, HiddenFromSearch inhidden, bool isselected) : base(title, desc, file, filebytes, thumb, isselected)
         {
+            tt = new ToolTip();
             tags = intags;
-            Public = ispublic;
-            Family = isfamily;
-            Friends = isfriends;
-            type = intype;
-            level = inlevel;
-            hidden = inhidden;
+            ispublic = ispub;
+            visibletofamily = isfamily;
+            visibletofriends = isfriends;
+            contenttype = intype;
+            safetylevel = inlevel;
+            hiddenfromsearch = inhidden;
+            RefreshToolTip();
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -152,14 +161,42 @@ namespace WinFlickSharp
             var f = new SolidBrush(this.ForeColor);
             e.Graphics.DrawString(string.Join(";", Tags), textFont, f, 126, 58);
             var checkboxes = string.Format("{0}{1}{2}",
-                pub ? "Public" : "Private",
-                family ? "/Family" : "",
-                friends ? "/Friends" : "");
+                ispublic ? "Public" : "Private",
+                visibletofamily ? "/Family" : "",
+                visibletofriends ? "/Friends" : "");
             e.Graphics.DrawString(checkboxes, textFont, f, 126, 72);
-            e.Graphics.DrawString(type.ToString(), textFont, f, 126, 86);
-            e.Graphics.DrawString(level.ToString(), textFont, f, 126, 100);
-            e.Graphics.DrawString(hidden.ToString(), textFont, f, 126, 114);
-            
+            e.Graphics.DrawString(contenttype.ToString(), textFont, f, 126, 86);
+            e.Graphics.DrawString(safetylevel.ToString(), textFont, f, 126, 100);
+            e.Graphics.DrawString(hiddenfromsearch.ToString(), textFont, f, 126, 113);            
+        }
+
+        protected override void RefreshToolTip()
+        {
+            var sb = new StringBuilder();
+            if (title != "")
+            {
+                sb.AppendLine(title);
+            }
+            if (Description != "")
+            {
+                sb.AppendLine(description);
+            }
+            sb.AppendLine(filename);
+            if (strfilesizebytes != "")
+            {
+                sb.AppendLine(strfilesizebytes);
+            }
+            if (tags != null && tags.Length != 0)
+            {
+                sb.AppendLine(string.Join(";", tags));
+            }
+            sb.Append(ispublic ? "Public" : "Private");
+            sb.Append(visibletofamily ? "/Family" : "");
+            sb.AppendLine(visibletofriends ? "/Friends" : "");
+            sb.AppendLine(contenttype.ToString());
+            sb.AppendLine(safetylevel.ToString());
+            sb.AppendLine(hiddenfromsearch.ToString());
+            tt.SetToolTip(this, sb.ToString());
         }
     }
 }

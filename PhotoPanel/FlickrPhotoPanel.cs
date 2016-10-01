@@ -9,10 +9,9 @@ namespace PhotoPanel
 {
     public class FlickrPhotoPanel : PhotoPanel
     {
-        private ToolTip tt;
         string[] tags;
-        [Category("Appearance")]
-        [Description("The tags of the picture on the control.")]
+        [Category("Misc")]
+        [Description("The tags of the image on the control.")]
         public string[] Tags
         {
             get
@@ -22,13 +21,17 @@ namespace PhotoPanel
             set
             {
                 tags = value;
-                RefreshToolTip();
+                OnPropertyChanged("Tags");
+                OnToolTipChanged("Tags");
             }
         }
 
         bool ispublic;
-        [Category("Appearance")]
-        [Description("Whether or not the picture is public.")]
+        /// <summary>
+        /// <see cref="bool"/> indicating whether or not the image is public.
+        /// </summary>
+        [Category("Misc")]
+        [Description("Whether or not the image is public.")]
         public bool IsPublic
         {
             get
@@ -38,13 +41,17 @@ namespace PhotoPanel
             set
             {
                 ispublic = value;
-                RefreshToolTip();
+                OnPropertyChanged("IsPublic");
+                OnToolTipChanged("IsPublic");
             }
         }
 
         bool visibletofamily;
-        [Category("Appearance")]
-        [Description("Whether or not the picture is visible by family.")]
+        /// <summary>
+        /// <see cref="bool"/> indicating whether or not the image is visible to family.
+        /// </summary>
+        [Category("Misc")]
+        [Description("Whether or not the image is visible to family.")]
         public bool VisibleToFamily
         {
             get
@@ -54,13 +61,17 @@ namespace PhotoPanel
             set
             {
                 visibletofamily = value;
-                RefreshToolTip();
+                OnPropertyChanged("VisibleToFamily");
+                OnToolTipChanged("VisibleToFamily");
             }            
         }
 
         bool visibletofriends;
-        [Category("Appearance")]
-        [Description("Whether or not the picture is visible by friends.")]
+        /// <summary>
+        /// <see cref="bool"/> indicating whether or not the image is visible to friends.
+        /// </summary>
+        [Category("Misc")]
+        [Description("Whether or not the image is visible to friends.")]
         public bool VisibleToFriends
         {
             get
@@ -70,13 +81,17 @@ namespace PhotoPanel
             set
             {
                 visibletofriends = value;
-                RefreshToolTip();
+				OnPropertyChanged("VisibleToFriends");
+				OnToolTipChanged("VisibleToFriends");
             }
         }
 
         ContentType contenttype;
-        [Category("Appearance")]
-        [Description("The content type of the picture.")]
+        /// <summary>
+        /// <see cref="ContentType"/> of the image.
+        /// </summary>
+        [Category("Misc")]
+        [Description("The content type of the image.")]
         public ContentType ContentType
         {
             get
@@ -86,13 +101,17 @@ namespace PhotoPanel
             set
             {
                 contenttype = value;
-                RefreshToolTip();
-            }
+                OnPropertyChanged("ContentType");
+                OnToolTipChanged("ContentType");
+			}
         }
 
         SafetyLevel safetylevel;
-        [Category("Appearance")]
-        [Description("The safety level of the picture.")]
+        /// <summary>
+		/// <see cref="FlickrNet.SafetyLevel"/> of the image.
+		/// </summary>
+		[Category("Misc")]
+        [Description("The safety level of the image.")]
         public SafetyLevel SafetyLevel
         {
             get
@@ -102,12 +121,16 @@ namespace PhotoPanel
             set
             {
                 safetylevel = value;
-                RefreshToolTip();
+				OnPropertyChanged("SafetyLevel");
+				OnToolTipChanged("SafetyLevel");
             }
         }
 
         HiddenFromSearch hiddenfromsearch;
-        [Category("Appearance")]
+        /// <summary>
+		/// <see cref="FlickrNet.HiddenFromSearch"/> indicating whether or not the image is hidden from search.
+		/// </summary>
+		[Category("Misc")]
         [Description("Whether or not the picture is hidden from search.")]
         public HiddenFromSearch HiddenFromSearch
         {
@@ -118,11 +141,15 @@ namespace PhotoPanel
             set
             {
                 hiddenfromsearch = value;
-                RefreshToolTip();
+				OnPropertyChanged("HiddenFromSearch");
+				OnToolTipChanged("HiddenFromSearch");
             }
         }
 
-        public FlickrPhotoPanel() : base("","","",0,null,false)
+        /// <summary>
+		/// Constructs a new <see cref="FlickrPhotoPanel"/> with default properties.
+		/// </summary>
+		public FlickrPhotoPanel() : base("","","",0,null)
         {
             tt = new ToolTip();
             title = "";
@@ -137,11 +164,24 @@ namespace PhotoPanel
             contenttype = ContentType.Photo;
             safetylevel = SafetyLevel.Safe;
             hiddenfromsearch = HiddenFromSearch.Hidden;
-            isselected = false;
-            RefreshToolTip();
         }
 
-        public FlickrPhotoPanel(string title, string desc, string file, string filebytes, Bitmap thumb, string[] intags, bool ispub, bool isfamily, bool isfriends, ContentType intype, SafetyLevel inlevel, HiddenFromSearch inhidden, bool isselected) : base(title, desc, file, filebytes, thumb, isselected)
+		/// <summary>
+		/// Constructs a new <see cref="FlickrPhotoPanel"/> with the supplied properties.
+		/// </summary>
+		/// <param name="title"><see cref="string"/> containing the title of the image.</param>
+		/// <param name="desc"><see cref="string"/> containing the description of the image.</param>
+		/// <param name="file"><see cref="string"/> containing the full path of the image file.</param>
+		/// <param name="filebytes"><see cref="string"/> describing the file size.</param>
+		/// <param name="thumb"><see cref="Bitmap"/> thumbnail of the image.</param>
+		/// <param name="intags"><see cref="string[]"/> containing the tags associated with the image.</param>
+		/// <param name="ispub"><see cref="bool"/> indicating whether or not the image is viewable by the public.</param>
+		/// <param name="isfamily"><see cref="bool"/> indicating whether or not the image is viewable by family.</param>
+		/// <param name="isfriends"><see cref="bool"/> indicating whether or not the image is viewable by friends.</param>
+		/// <param name="intype"><see cref="FlickrNet.ContentType"/> of the image.</param>
+		/// <param name="inlevel"><see cref="FlickrNet.SafetyLevel"/> of the iamge.</param>
+		/// <param name="inhidden"><see cref="FlickrNet.HiddenFromSearch"/> indicating whether or not the image is hidden from search.</param>
+		public FlickrPhotoPanel(string title, string desc, string file, string filebytes, Bitmap thumb, string[] intags, bool ispub, bool isfamily, bool isfriends, ContentType intype, SafetyLevel inlevel, HiddenFromSearch inhidden, bool isselected) : base(title, desc, file, filebytes, thumb)
         {
             tt = new ToolTip();
             tags = intags;
@@ -151,52 +191,27 @@ namespace PhotoPanel
             contenttype = intype;
             safetylevel = inlevel;
             hiddenfromsearch = inhidden;
-            RefreshToolTip();
-        }
+		}
 
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            var textFont = new Font("Arial", 9);
-            var f = new SolidBrush(this.ForeColor);
-            e.Graphics.DrawString(string.Join(";", Tags), textFont, f, 126, 58);
-            var checkboxes = string.Format("{0}{1}{2}",
-                ispublic ? "Public" : "Private",
-                visibletofamily ? "/Family" : "",
-                visibletofriends ? "/Friends" : "");
-            e.Graphics.DrawString(checkboxes, textFont, f, 126, 72);
-            e.Graphics.DrawString(contenttype.ToString(), textFont, f, 126, 86);
-            e.Graphics.DrawString(safetylevel.ToString(), textFont, f, 126, 100);
-            e.Graphics.DrawString(hiddenfromsearch.ToString(), textFont, f, 126, 113);            
-        }
-
-        protected override void RefreshToolTip()
-        {
-            var sb = new StringBuilder();
-            if (title != "")
-            {
-                sb.AppendLine(title);
-            }
-            if (Description != "")
-            {
-                sb.AppendLine(description);
-            }
-            sb.AppendLine(filename);
-            if (strfilesizebytes != "")
-            {
-                sb.AppendLine(strfilesizebytes);
-            }
-            if (tags != null && tags.Length != 0)
-            {
-                sb.AppendLine(string.Join(";", tags));
-            }
-            sb.Append(ispublic ? "Public" : "Private");
-            sb.Append(visibletofamily ? "/Family" : "");
-            sb.AppendLine(visibletofriends ? "/Friends" : "");
-            sb.AppendLine(contenttype.ToString());
-            sb.AppendLine(safetylevel.ToString());
-            sb.AppendLine(hiddenfromsearch.ToString());
-            tt.SetToolTip(this, sb.ToString());
-        }
-    }
+		protected override void SetToolTipText()
+		{
+			StringBuilder sb = new StringBuilder();
+			if (!string.IsNullOrEmpty(title)) sb.AppendLine(title);
+			if (!string.IsNullOrEmpty(description)) sb.AppendLine(description);
+			sb.AppendLine(filenameshort);
+			sb.AppendLine(strfilesizebytes + " " + originalsize.Width + "x" + originalsize.Height);
+			if (tags != null && tags.Length != 0)
+			{
+				sb.AppendLine(string.Join(";", tags));
+			}
+			sb.Append(ispublic ? "Public" : "Private");
+			sb.Append(visibletofamily ? "/Family" : "");
+			sb.AppendLine(visibletofriends ? "/Friends" : "");
+			sb.AppendLine(contenttype.ToString());
+			sb.AppendLine(safetylevel.ToString());
+			sb.AppendLine(hiddenfromsearch.ToString());
+			sb.AppendLine(isuploaded ? "Uploaded" : "Not Uploaded");
+			tooltiptext = sb.ToString();
+		}
+	}
 }

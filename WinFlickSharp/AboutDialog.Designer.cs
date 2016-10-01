@@ -50,7 +50,7 @@
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Image = global::WinFlickSharp.Properties.Resources._13627202_10205362345891940_7798122370878362373_n__1_;
+            this.pictureBox1.Image = global::WinFlickSharp.Properties.Resources.profile;
             this.pictureBox1.Location = new System.Drawing.Point(12, 12);
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.Size = new System.Drawing.Size(171, 167);

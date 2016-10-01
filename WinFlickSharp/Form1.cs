@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using FlickrNet;
 using Helpers;
 using PhotoPanel;
+using System.Drawing.Drawing2D;
 
 namespace WinFlickSharp
 {
@@ -39,7 +40,7 @@ namespace WinFlickSharp
         public Form1()
         {
             InitializeComponent();
-            comboBoxContentType.DataSource = Enum.GetValues(typeof(ContentType));
+			comboBoxContentType.DataSource = Enum.GetValues(typeof(ContentType));
             comboBoxSafetyLevel.DataSource = Enum.GetValues(typeof(SafetyLevel));
             comboBoxHiddenFromSearch.DataSource = Enum.GetValues(typeof(HiddenFromSearch));
             listViewItems = new List<FlickrPhotoPanel>(1000);
@@ -47,17 +48,16 @@ namespace WinFlickSharp
             if (FlickrManager.OAuthToken != null && FlickrManager.OAuthToken.Token != null)
             {
                 authenticated = true;
-                authenticateToolStripMenuItem.Enabled = false;
-                EnterCodeToolStripMenuItem.Enabled = false;
-                toolStripStatusLabel2.Image = Properties.Resources._125_31;
+                authenticateMenuItem.Enabled = authenticateToolStrip.Enabled = enterCodeMenuItem.Enabled = enterCodeToolStrip.Enabled = false;
+				toolStripStatusLabel2.Image = imageList2.Images[1];
                 toolStripStatusLabel2.ToolTipText = string.Format("You are authenticated as: {0}", FlickrManager.OAuthToken.FullName);
                 this.Text = FormPreamble + " - " + FlickrManager.OAuthToken.FullName;
             }
             else
             {
                 authenticated = false;
-                authenticateToolStripMenuItem.Enabled = true;
-                toolStripStatusLabel2.Image = Properties.Resources._200;
+				authenticateMenuItem.Enabled = authenticateToolStrip.Enabled = flickrMenuItem.Enabled = true;
+				toolStripStatusLabel2.Image = imageList2.Images[0];
                 toolStripStatusLabel2.ToolTipText = "You are not authenticated.";
                 this.Text = FormPreamble + " - Not Authenticated";
             }
@@ -67,12 +67,30 @@ namespace WinFlickSharp
 #region Private Methods
         private void UpdateStatusLabel()
         {
-            string status = string.Format("{0} item{1}", itemcount, itemcount != 1 ? "s" : "");
-            if (selectedcount != 0)
-            {
-                status += string.Format("     {0} item{1} selected     {2}", selectedcount, selectedcount != 1 ? "s":"", StringUtilities.GetBytesReadable(selectedbytes));
-            }
-            toolStripStatusLabel3.Text = status;
+            string status = string.Format("{0} item{1}", 
+				itemcount, 
+				itemcount != 1 ? "s" : "");
+			if (selectedcount != 0)
+			{
+				status += string.Format("     {0} item{1} selected     {2}",
+					selectedcount,
+					selectedcount != 1 ? "s" : "",
+					StringUtilities.GetBytesReadable(selectedbytes));
+				uploadSelectedMenuItem.Enabled = uploadSelectedToolStrip.Enabled = clearSelectedMenuItem.Enabled = clearSelectedToolStrip.Enabled = true;
+			}
+			else
+			{
+				uploadSelectedMenuItem.Enabled = uploadSelectedToolStrip.Enabled = clearSelectedMenuItem.Enabled = clearSelectedToolStrip.Enabled = false;
+			}
+			if (itemcount == 0)
+			{
+				imagesMenuItem.Enabled = flickrMenuItem.Enabled = toolStripDropDownButtonImages.Enabled = toolStripDropDownButtonFlickr.Enabled = selectAllMenuItem.Enabled = selectAllToolStrip.Enabled = clearAllMenuItem.Enabled = clearAllToolStrip.Enabled = uploadAllMenuItem.Enabled = uploadAllToolStrip.Enabled = regenerateThumbnailsMenuItem.Enabled = regenerateThumbnailsToolStrip.Enabled = false;
+			}
+			else
+			{
+				imagesMenuItem.Enabled = flickrMenuItem.Enabled = toolStripDropDownButtonImages.Enabled = toolStripDropDownButtonFlickr.Enabled = selectAllMenuItem.Enabled = selectAllToolStrip.Enabled = clearAllMenuItem.Enabled = clearAllToolStrip.Enabled = uploadAllMenuItem.Enabled = uploadAllToolStrip.Enabled = regenerateThumbnailsMenuItem.Enabled = regenerateThumbnailsToolStrip.Enabled = true;
+			}
+			toolStripStatusLabel3.Text = status;
         }
 
         private FlickrPhotoPanel GetFirstSelectedFlickrPhotoPanel()
@@ -85,22 +103,19 @@ namespace WinFlickSharp
 
         private void ProcessFiles(string[] files)
         {
-            if (GenerateThumbsWorker.IsBusy)
+            if (generateThumbsWorker.IsBusy)
             {
-                GenerateThumbsWorker.CancelAsync();
+                generateThumbsWorker.CancelAsync();
             }
             flowLayoutPanel1.Controls.Clear();
+			itemcount = 0;
+			selectedcount = 0;
+			selectedbytes = 0;
+			ClearForm();
             populateWorker.RunWorkerAsync(files);
-            pgd = new ProgressDialog();
-            pgd.progressBar1.Style = ProgressBarStyle.Blocks;
-            pgd.Text = "Generating thumbnails. This could take a while...";
-            if (DialogResult.Cancel == pgd.ShowDialog())
-            {
-                populateWorker.CancelAsync();
-            }
         }
 
-        private int[] GetSelectedIndices(FlowLayoutPanel flow)
+        private int[] GetSelectedIndices(FlowLayoutPanel flow, bool excludeuploaded = false)
         {
             List<int> indices = new List<int>();
             int i = 0;
@@ -109,9 +124,13 @@ namespace WinFlickSharp
                 var fpp = (FlickrPhotoPanel)item;
                 if (fpp.IsSelected)
                 {
-                    indices.Add(i);
-                }
-                i++;
+					if (excludeuploaded && fpp.IsUploaded)
+					{
+						continue;
+					}
+					indices.Add(i);
+				}
+				i++;
             }
             return indices.ToArray();
         }
@@ -122,13 +141,13 @@ namespace WinFlickSharp
             {
                 var lvi = (FlickrPhotoPanel)item;
                 lvi.IsSelected = false;
-                lvi.Invalidate();
             }
             selectedcount = 0;
             selectedbytes = 0;
+			UpdateStatusLabel();
         }
 
-        private void UnselectAll(FlickrPhotoPanel fpp)
+        private void UnselectAllExcept(FlickrPhotoPanel fpp)
         {
             foreach (var item in flowLayoutPanel1.Controls)
             {
@@ -136,11 +155,11 @@ namespace WinFlickSharp
                 if (lvi != fpp)
                 {
                     lvi.IsSelected = false;
-                    lvi.Invalidate();
                 }
             }
-            selectedcount = 0;
-            selectedbytes = 0;
+            selectedcount = 1;
+            selectedbytes = fpp.FileSizeBytes;
+			UpdateStatusLabel();
         }
 
         private void SelectAll()
@@ -152,7 +171,6 @@ namespace WinFlickSharp
                 var lvi = (FlickrPhotoPanel)item;
                 totalbytes += lvi.FileSizeBytes;
                 lvi.IsSelected = true;
-                lvi.Invalidate();
                 count++;
             }
             selectedcount = count;
@@ -197,11 +215,11 @@ namespace WinFlickSharp
             Flickr f = FlickrManager.GetInstance();
             try
             {
-                var accessToken = f.OAuthGetAccessToken(requestToken, EnterCodeToolStripMenuItem.Text);
+                var accessToken = f.OAuthGetAccessToken(requestToken, enterCodeMenuItem.Text);
                 FlickrManager.OAuthToken = accessToken;
                 Text = accessToken.FullName;
                 authWindow.Close();
-                EnterCodeToolStripMenuItem.Enabled = false;
+				enterCodeMenuItem.Enabled = enterCodeToolStrip.Enabled = false;
                 authenticated = true;
             }
             catch (FlickrApiException ex)
@@ -209,11 +227,11 @@ namespace WinFlickSharp
                 MessageBox.Show("Failed to get access token. Error message: " + ex.Message);
             }
         }
-        #endregion
+		#endregion
 
-#region Event Handlers
-        #region Dialogs
-        private void openFileMenuItem_Click(object sender, EventArgs e)
+		#region Event Handlers
+		#region Dialogs
+		private void chooseFilesMenuItem_Click(object sender, EventArgs e)
         {
             openFileDialog1.InitialDirectory = Environment.SpecialFolder.MyPictures.ToString();
             if (openFileDialog1.ShowDialog() == DialogResult.Cancel) return;
@@ -223,7 +241,7 @@ namespace WinFlickSharp
             ProcessFiles(openFileDialog1.FileNames);
         }
 
-        private void openFolderMenuItem_Click(object sender, EventArgs e)
+        private void chooseFolderMenuItem_Click(object sender, EventArgs e)
         {
             if (folderBrowserDialog1.ShowDialog() == DialogResult.Cancel) return;
 
@@ -233,16 +251,16 @@ namespace WinFlickSharp
         #endregion
 
         #region Toolbar
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void exitMenuItem_Click(object sender, EventArgs e)
         {
             Close();
         }
 
-        private void authenticateToolStripMenuItem_Click(object sender, EventArgs e)
+        private void authenticateMenuItem_Click(object sender, EventArgs e)
         {
             if (FlickrManager.OAuthToken == null || FlickrManager.OAuthToken.Token == null)
             {
-                authenticateToolStripMenuItem.Enabled = false;
+                authenticateMenuItem.Enabled = false;
                 Flickr f = FlickrManager.GetInstance();
                 requestToken = f.OAuthGetRequestToken("oob");
 
@@ -250,7 +268,7 @@ namespace WinFlickSharp
                 authWindow = new AuthBrowser();
                 authWindow.webControl1.Source = new Uri(url);
                 authWindow.Show();
-                EnterCodeToolStripMenuItem.Enabled = true;
+                enterCodeMenuItem.Enabled = enterCodeToolStrip.Enabled = true;
             }
             else
             {
@@ -258,13 +276,26 @@ namespace WinFlickSharp
             }
         }
 
-        private void uploadToolStripMenuItem_Click(object sender, EventArgs e)
+		private void uploadSelectedMenuItem_Click(object sender, EventArgs e)
+		{
+			uploadSelectedMenuItem.Enabled = uploadAllMenuItem.Enabled = uploadSelectedToolStrip.Enabled = uploadAllToolStrip.Enabled = false;
+			uploadWorker.RunWorkerAsync();
+			pgd = new ProgressDialog();
+			pgd.progressBar1.Style = ProgressBarStyle.Blocks;
+			pgd.Text = "Uploading images. This could take a while...";
+			if (DialogResult.Cancel == pgd.ShowDialog())
+			{
+				uploadWorker.CancelAsync();
+			}
+		}
+
+		private void uploadAllMenuItem_Click(object sender, EventArgs e)
         {
-            uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = false;
-            UploadWorker.RunWorkerAsync();
+			SelectAll();
+			uploadSelectedMenuItem_Click(sender, e);
         }
 
-        private void EnterCodeToolStripMenuItem_KeyUp(object sender, KeyEventArgs e)
+        private void enterCodeMenuItem_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -272,7 +303,7 @@ namespace WinFlickSharp
             }
         }
 
-        private void regenerateThumbnailToolStripMenuItem_Click(object sender, EventArgs e)
+        private void regenerateThumbnailMenuItem_Click(object sender, EventArgs e)
         {
             ToolStripItem item = (sender as ToolStripItem);
             if (item != null)
@@ -286,57 +317,40 @@ namespace WinFlickSharp
                         fpp.Thumbnail = GraphicsUtilities.ResizeImage(bm, 120, 120, Color.Black, true);
                         fpp.OriginalSize = new System.Drawing.Size(bm.Width, bm.Height);
                     }
-                    fpp.Invalidate();
                 }
             }
         }
 
-        private void removeToolStripMenuItem_Click(object sender, EventArgs e)
+        private void clearSelectedMenuItem_Click(object sender, EventArgs e)
         {
-            var lvi = GetFirstSelectedFlickrPhotoPanel();
             List<FlickrPhotoPanel> deleted = new List<FlickrPhotoPanel>();
-            if (lvi == null)
+			int[] indices = GetSelectedIndices(flowLayoutPanel1);
+			long bytesremoved = 0;
+			foreach (var index in indices)
             {
-                ToolStripItem item = (sender as ToolStripItem);
-                if (item != null)
-                {
-                    ContextMenuStrip owner = item.Owner as ContextMenuStrip;
-                    if (owner != null)
-                    {
-                        FlickrPhotoPanel fpp = (FlickrPhotoPanel)owner.SourceControl;
-                        deleted.Add(fpp);
-                    }
-                }
-            }
-            else
-            {
-                foreach (var item in flowLayoutPanel1.Controls)
-                {
-                    var fpp = (FlickrPhotoPanel)item;
-                    if (fpp.IsSelected)
-                    {
-                        deleted.Add(fpp);
-                    }
-                }
+                var fpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[index];
+                deleted.Add(fpp);
             }
             foreach (var item in deleted)
             {
-                flowLayoutPanel1.Controls.Remove(item);
+				bytesremoved += item.FileSizeBytes;
+				flowLayoutPanel1.Controls.Remove(item);
                 item.Dispose();
-                //listViewItems.Remove(item);
             }
-            UnselectAll();
-            flowLayoutPanel1.Invalidate();
-            uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = false;
+			itemcount -= deleted.Count;
+			selectedcount -= deleted.Count;
+			selectedbytes -= bytesremoved;
+			ClearForm();
+			UpdateStatusLabel();
         }
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        private void aboutMenuItem_Click(object sender, EventArgs e)
         {
             var ad = new AboutDialog();
             ad.ShowDialog();
         }
 
-        private void clearListToolStripMenuItem_Click(object sender, EventArgs e)
+        private void clearAllMenuItem_Click(object sender, EventArgs e)
         {
             foreach (var item in flowLayoutPanel1.Controls)
             {
@@ -345,13 +359,17 @@ namespace WinFlickSharp
             }
             GC.Collect();
             flowLayoutPanel1.Controls.Clear();
-            uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = false;
-
+			itemcount = 0;
+			selectedcount = 0;
+			selectedbytes = 0;
+			ClearForm();
+			UpdateStatusLabel();
         }
 
-        private void selectAllToolStripMenuItem_Click(object sender, EventArgs e)
+        private void selectAllMenuItem_Click(object sender, EventArgs e)
         {
             SelectAll();
+			UpdateStatusLabel();
         }
         #endregion
 
@@ -361,7 +379,6 @@ namespace WinFlickSharp
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
             lvi.Title = textBoxTitle.Text;
-            lvi.Invalidate();
         }
 
         private void textBoxDescription_Leave(object sender, EventArgs e)
@@ -369,7 +386,6 @@ namespace WinFlickSharp
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
             lvi.Description = textBoxDescription.Text;
-            lvi.Invalidate();
         }
 
         private void textBoxTags_Leave(object sender, EventArgs e)
@@ -377,7 +393,6 @@ namespace WinFlickSharp
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
             lvi.Tags = textBoxTags.Text.Split(';');
-            lvi.Invalidate();
         }
 
         private void checkBoxPublic_CheckedChanged(object sender, EventArgs e)
@@ -385,7 +400,6 @@ namespace WinFlickSharp
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
             lvi.IsPublic = checkBoxPublic.Checked;
-            lvi.Invalidate();
         }
 
         private void checkBoxFamily_CheckedChanged(object sender, EventArgs e)
@@ -393,7 +407,6 @@ namespace WinFlickSharp
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
             lvi.VisibleToFamily = checkBoxFamily.Checked;
-            lvi.Invalidate();
         }
 
         private void checkBoxFriends_CheckedChanged(object sender, EventArgs e)
@@ -401,7 +414,6 @@ namespace WinFlickSharp
             var lvi = GetFirstSelectedFlickrPhotoPanel();
             if (lvi == null) return;
             lvi.VisibleToFriends = checkBoxFriends.Checked;
-            lvi.Invalidate();
         }
 
         private void comboBoxContentType_SelectedIndexChanged(object sender, EventArgs e)
@@ -411,7 +423,6 @@ namespace WinFlickSharp
             ContentType cresult;
             if (Enum.TryParse(comboBoxContentType.Text, out cresult))
             lvi.ContentType = cresult;
-            lvi.Invalidate();
         }
 
         private void comboBoxSafetyLevel_SelectedIndexChanged(object sender, EventArgs e)
@@ -421,7 +432,6 @@ namespace WinFlickSharp
             SafetyLevel cresult;
             if (Enum.TryParse(comboBoxSafetyLevel.Text, out cresult))
                 lvi.SafetyLevel = cresult;
-            lvi.Invalidate();
         }
 
         private void comboBoxHiddenFromSearch_SelectedIndexChanged(object sender, EventArgs e)
@@ -431,7 +441,6 @@ namespace WinFlickSharp
             HiddenFromSearch cresult;
             if (Enum.TryParse(comboBoxHiddenFromSearch.Text, out cresult))
                 lvi.HiddenFromSearch = cresult;
-            lvi.Invalidate();
         }
 
         private void toolStripTextBox1_KeyUp_1(object sender, KeyEventArgs e)
@@ -443,62 +452,9 @@ namespace WinFlickSharp
         }
         #endregion
 
-        #region ToolStrip
-        private void EnterCodeToolStripMenuItem_Enter(object sender, EventArgs e)
-        {
-            EnterCodeToolStripMenuItem.SelectAll();
-        }
-
-        private void toolStripButtonOpenFiles_Click(object sender, EventArgs e)
-        {
-            openFileMenuItem_Click(sender, e);
-        }
-
-        private void toolStripButtonOpenFolder_Click(object sender, EventArgs e)
-        {
-            openFolderMenuItem_Click(sender, e);
-        }
-
-        private void toolStripButtonClearList_Click(object sender, EventArgs e)
-        {
-            clearListToolStripMenuItem_Click(sender, e);
-        }
-
-        private void toolStripButtonRemoveSelected_Click(object sender, EventArgs e)
-        {
-            removeToolStripMenuItem_Click(sender, e);
-        }
-
-        private void toolStripButtonAuthenticate_Click(object sender, EventArgs e)
-        {
-            authenticateToolStripMenuItem_Click(sender, e);
-        }
-
-        private void toolStripTextBoxLocation_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                var me = (ToolStripTextBox)sender;
-                EnterCodeToolStripMenuItem.Text = me.Text;
-                EnterCodeToolStripMenuItem_KeyUp(sender, e);
-            }
-        }
-
-        private void toolStripButtonUpload_Click(object sender, EventArgs e)
-        {
-            uploadToolStripMenuItem_Click(sender, e);
-        }
-
-        private void toolStripButtonAbout_Click(object sender, EventArgs e)
-        {
-            aboutToolStripMenuItem_Click(sender, e);
-        }
-        #endregion
-
         #region Form
         private void Form1_Load(object sender, EventArgs e)
         {
-            Helpers.GraphicsUtilities.DoubleBuffered(flowLayoutPanel1, true);
         }
 
         private void toolStripTextBoxLocation_KeyUp_1(object sender, KeyEventArgs e)
@@ -530,7 +486,7 @@ namespace WinFlickSharp
                 case Keys.A:
                     if (ModifierKeys.HasFlag(Keys.Control))
                     {
-                        selectAllToolStripMenuItem_Click(sender, e);
+                        selectAllMenuItem_Click(sender, e);
                     }
                     break;
                 default:
@@ -568,7 +524,7 @@ namespace WinFlickSharp
             else
             {
                 fpp.IsSelected = true;
-                UnselectAll(fpp);
+                UnselectAllExcept(fpp);
                 selectedcount = 1;
                 selectedbytes = fpp.FileSizeBytes;
             }
@@ -580,7 +536,6 @@ namespace WinFlickSharp
             {
                 ClearForm();
             }
-            fpp.Invalidate();
             UpdateStatusLabel();
         }
 
@@ -592,12 +547,10 @@ namespace WinFlickSharp
                     int rindex = GetSelectedIndices(flowLayoutPanel1)[0];
                     int next = rindex + 1 >= flowLayoutPanel1.Controls.Count ? 0 : rindex + 1;
                     var fpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[rindex];
-                    UnselectAll(fpp);
+                    UnselectAllExcept(fpp);
                     var nextfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[next];
                     fpp.IsSelected = false;
-                    fpp.Invalidate();
                     nextfpp.IsSelected = true;
-                    nextfpp.Invalidate();
                     FillOutForm(nextfpp);
                     flowLayoutPanel1.ScrollControlIntoView(nextfpp);
                     break;
@@ -605,19 +558,17 @@ namespace WinFlickSharp
                     int lindex = GetSelectedIndices(flowLayoutPanel1)[0];
                     int prev = lindex - 1 >= 0 ? lindex - 1 : flowLayoutPanel1.Controls.Count - 1;
                     var lfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[lindex];
-                    UnselectAll(lfpp);
+                    UnselectAllExcept(lfpp);
                     var prevfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[prev];
                     lfpp.IsSelected = false;
-                    lfpp.Invalidate();
                     prevfpp.IsSelected = true;
-                    prevfpp.Invalidate();
                     FillOutForm(prevfpp);
                     flowLayoutPanel1.ScrollControlIntoView(prevfpp);
                     break;
                 case Keys.Up:
                     int uindex = GetSelectedIndices(flowLayoutPanel1)[0];
                     var ufpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[uindex];
-                    UnselectAll(ufpp);
+                    UnselectAllExcept(ufpp);
                     int columns = flowLayoutPanel1.Width / ufpp.Width;
                     int max = flowLayoutPanel1.Controls.Count - 1;
                     int uprev = uindex - columns >= 0 ? uindex - columns : max - (max % columns) + uindex;
@@ -627,22 +578,18 @@ namespace WinFlickSharp
                     }
                     var prevufpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[uprev];
                     ufpp.IsSelected = false;
-                    ufpp.Invalidate();
                     prevufpp.IsSelected = true;
-                    prevufpp.Invalidate();
                     flowLayoutPanel1.ScrollControlIntoView(prevufpp);
                     break;
                 case Keys.Down:
                     int dindex = GetSelectedIndices(flowLayoutPanel1)[0];
                     var dfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[dindex];
-                    UnselectAll(dfpp);
+                    UnselectAllExcept(dfpp);
                     int dcolumns = flowLayoutPanel1.Width / dfpp.Width;
                     int dprev = dindex + dcolumns < flowLayoutPanel1.Controls.Count ? dindex + dcolumns : dindex % dcolumns;
                     var prevdfpp = (FlickrPhotoPanel)flowLayoutPanel1.Controls[dprev];
                     dfpp.IsSelected = false;
-                    dfpp.Invalidate();
                     prevdfpp.IsSelected = true;
-                    prevdfpp.Invalidate();
                     flowLayoutPanel1.ScrollControlIntoView(prevdfpp);
                     break;
                 default:
@@ -657,47 +604,73 @@ namespace WinFlickSharp
         private void uploadWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             var f = FlickrManager.GetAuthInstance();
-            f.OnUploadProgress += new EventHandler<UploadProgressEventArgs>(Flickr_OnUploadProgress);
-            //            ListView.ListViewItemCollection lvic = listView1.Groups[0].Items;
-            
-            foreach (var lvi in flowLayoutPanel1.Controls)
-            {
-                FlickrPhotoPanel lv = (FlickrPhotoPanel)lvi;
-                if (lv.IsSelected)
-                {
-                    string photoId = f.UploadPicture(lv.FileName,
-                        lv.Title,
-                        lv.Description,
-                        string.Join(";", lv.Tags),
-                        lv.IsPublic,
-                        lv.VisibleToFamily,
-                        lv.VisibleToFriends);
-                }
-            }
+			BackgroundWorker b = sender as BackgroundWorker;
+			decimal i = 1;
+			int[] indices = GetSelectedIndices(flowLayoutPanel1, true);
+			decimal count = indices.Length;
+			var starttime = DateTime.Now;
+			Parallel.ForEach(indices, new ParallelOptions { MaxDegreeOfParallelism = 2 }, (index) =>
+			{
+				if (b.CancellationPending)
+				{
+					return;
+				}
+				FlickrPhotoPanel lv = (FlickrPhotoPanel)flowLayoutPanel1.Controls[index];
+				var us = new UserState();
+				us.LVI = lv;
+				string photoId = f.UploadPicture(lv.FileName,
+					lv.Title,
+					lv.Description,
+					string.Join(";", lv.Tags),
+					lv.IsPublic,
+					lv.VisibleToFamily,
+					lv.VisibleToFriends);
+				us.UpdateStatus = UpdateStatus.Success;
+				int percent = (int)Math.Round((i / count) * 100m);
+				decimal itemsremaining = count - i;
+				var ticksperitem = DateTime.Now.Subtract(starttime).Ticks / i;
+				var ticksremaining = ticksperitem * itemsremaining;
+				var timeremaining = new TimeSpan((long)ticksremaining);
+				us.Message = string.Format("Uploading image {1} of {2}.\r\n{0}% Completed.\r\nEst. Time Remaining: {3}{4}{5}\r\n{6}",
+					(int)percent,
+					i,
+					count,
+					timeremaining.Hours > 0 ? timeremaining.Hours.ToString() + " hours" : "",
+					timeremaining.Minutes > 0 ? " " + timeremaining.Minutes.ToString() + " minutes" : "",
+					timeremaining.Seconds > 0 ? " " + timeremaining.Seconds.ToString() + " seconds" : "",
+					lv.FileName);
+				uploadWorker.ReportProgress(percent, us);
+				i++;
+			});
         }
 
         private void uploadWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            //
-            // TODO: Indicate what's been uploaded
-            //
+			pgd.Close();
             UnselectAll();
             toolStripProgressBar1.Value = 0;
             toolStripStatusLabel1.Text = "Ready.";
-            uploadToolStripMenuItem.Enabled = true;
-            toolStripButtonUpload.Enabled = true;
+            uploadAllMenuItem.Enabled = uploadAllToolStrip.Enabled = true;
         }
 
         private void uploadWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            toolStripProgressBar1.Value = e.ProgressPercentage;            
+			var us = (UserState)e.UserState;
+			var lvi = us.LVI;
+			BackgroundWorker b = sender as BackgroundWorker;
+			if (b.CancellationPending)
+			{
+				return;
+			}
+			if (us.UpdateStatus == UpdateStatus.Success)
+			{
+				pgd.progressBar1.Value = e.ProgressPercentage;
+				pgd.Label = us.Message;
+			}
+			lvi.IsUploaded = true;
+			lvi.Invalidate();
         }
 
-        private void Flickr_OnUploadProgress(object sender, UploadProgressEventArgs e)
-        {
-            UploadWorker.ReportProgress(e.ProcessPercentage);
-            toolStripStatusLabel1.Text = e.FullFileName;
-        }
         #endregion
 
 #region Populate List BackgroundWorker
@@ -705,18 +678,18 @@ namespace WinFlickSharp
         {
             string[] filenames = (string[])e.Argument;
             BackgroundWorker b = sender as BackgroundWorker;
-            var us = new UserState();
             decimal i = 1;
             decimal count = filenames.Length;
             var starttime = DateTime.Now;
             listViewItems.Clear();
-            Parallel.ForEach(filenames, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (file) =>
+            Parallel.ForEach(filenames, new ParallelOptions { MaxDegreeOfParallelism = 1 }, (file) =>
             {
                 if (b.CancellationPending)
                 {
                     return;
                 }
-                var lvi = new FlickrPhotoPanel();
+				var us = new UserState();
+				var lvi = new FlickrPhotoPanel();
                 lvi.Click += Lvi_Click;
                 lvi.DoubleClick += Lvi_DoubleClick;
                 lvi.KeyUp += Lvi_KeyUp;
@@ -733,14 +706,13 @@ namespace WinFlickSharp
                 var ticksperitem = DateTime.Now.Subtract(starttime).Ticks / i;
                 var ticksremaining = ticksperitem * itemsremaining;
                 var timeremaining = new TimeSpan((long)ticksremaining);
-                us.Message = string.Format("Processing File {1} of {2}.\r\n{0}% Completed.\r\nEst. Time Remaining: {3}{4}{5}\r\n{6}",
+                us.Message = string.Format("Processing file {1} of {2}.  {0}%   Est. Time Remaining: {3}{4}{5}",
                     (int)percent,
                     i,
                     count,
                     timeremaining.Hours > 0 ? timeremaining.Hours.ToString() + " hours" : "",
                     timeremaining.Minutes > 0 ? " " + timeremaining.Minutes.ToString() + " minutes" : "",
-                    timeremaining.Seconds > 0 ? " " + timeremaining.Seconds.ToString() + " seconds" : "",
-                    file);
+                    timeremaining.Seconds > 0 ? " " + timeremaining.Seconds.ToString() + " seconds" : "");
                 populateWorker.ReportProgress((int)Math.Round(percent), us);
                 i++;
             });
@@ -756,8 +728,10 @@ namespace WinFlickSharp
             }
             if (us.UpdateStatus == UpdateStatus.Success)
             {
-                pgd.progressBar1.Value = e.ProgressPercentage;
-                pgd.Label = us.Message;
+				//                pgd.progressBar1.Value = e.ProgressPercentage;
+				//                pgd.Label = us.Message;
+				toolStripProgressBar1.Value = e.ProgressPercentage;
+				toolStripStatusLabel1.Text = us.Message;
             }
         }
 
@@ -771,30 +745,51 @@ namespace WinFlickSharp
             flowLayoutPanel1.ResumeLayout();
             if (authenticated)
             {
-                uploadToolStripMenuItem.Enabled = toolStripButtonUpload.Enabled = true;
+                uploadSelectedMenuItem.Enabled = uploadAllMenuItem.Enabled = uploadSelectedToolStrip.Enabled = uploadAllToolStrip.Enabled = true;
             }
             itemcount = flowLayoutPanel1.Controls.Count;
             UpdateStatusLabel();
-            GenerateThumbsWorker.RunWorkerAsync();
+            generateThumbsWorker.RunWorkerAsync();
         }
         #endregion
 
 #region Generate Thumbnails Worker
         private void GenerateThumbsWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            var us = new UserState();
-            Parallel.ForEach<Control>(flowLayoutPanel1.Controls.Cast<Control>(), new ParallelOptions { MaxDegreeOfParallelism = 1 }, (item) =>
-
-            //            foreach (var item in flowLayoutPanel1.Controls)
+			var b = sender as BackgroundWorker;
+			decimal i = 1;
+			decimal count = flowLayoutPanel1.Controls.Count;
+			var starttime = DateTime.Now;
+			Parallel.ForEach(flowLayoutPanel1.Controls.Cast<Control>(), 
+				new ParallelOptions { MaxDegreeOfParallelism = 1 }, 
+				(item) =>
             {
+				if (b.CancellationPending)
+				{
+					return;
+				}
                 var fpp = (FlickrPhotoPanel)item;
-                us.LVI = fpp;
+				var us = new UserState();
+				us.LVI = fpp;
                 using (var bm = Image.FromFile(fpp.FileName))
                 {
                     us.Thumbnail = GraphicsUtilities.ResizeImage(bm, 120, 120, Color.Black, true);
                     us.OriginalSize = new System.Drawing.Size(bm.Width, bm.Height);
                 }
-                GenerateThumbsWorker.ReportProgress(0, us);
+				decimal percent = (i / count) * 100m;
+				decimal itemsremaining = count - i;
+				var ticksperitem = DateTime.Now.Subtract(starttime).Ticks / i;
+				var ticksremaining = ticksperitem * itemsremaining;
+				var timeremaining = new TimeSpan((long)ticksremaining);
+				us.Message = string.Format("Generating thumbnail {1} of {2}  {0}%  Est. Time Remaining:{3}{4}{5}. Click to stop.",
+					(int)percent,
+					i,
+					count,
+					timeremaining.Hours > 0 ? timeremaining.Hours.ToString() + " hours" : "",
+					timeremaining.Minutes > 0 ? " " + timeremaining.Minutes.ToString() + " minutes" : "",
+					timeremaining.Seconds > 0 ? " " + timeremaining.Seconds.ToString() + " seconds" : "");
+				generateThumbsWorker.ReportProgress((int)Math.Round(percent), us);
+				i++;
             });
         }
 
@@ -804,9 +799,38 @@ namespace WinFlickSharp
             var lvi = us.LVI;
             lvi.Thumbnail = us.Thumbnail;
             lvi.OriginalSize = us.OriginalSize;
-            lvi.Invalidate();
-        }
-        #endregion
+			toolStripProgressBar1.Value = e.ProgressPercentage;
+			toolStripStatusLabel1.Text = us.Message;
+		}
 
-    }
+		private void GenerateThumbsWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			toolStripProgressBar1.Value = 0;
+			toolStripStatusLabel1.Text = "Ready.";
+		}
+		#endregion
+
+		private void toolStripStatusLabel1_Click(object sender, EventArgs e)
+		{
+			generateThumbsWorker.CancelAsync();
+		}
+
+		private void regenerateThumbnailsMenuItem_Click(object sender, EventArgs e)
+		{
+			generateThumbsWorker.RunWorkerAsync();
+		}
+
+		private void toolStripStatusLabel1_MouseEnter(object sender, EventArgs e)
+		{
+			if (generateThumbsWorker.IsBusy)
+			{
+				statusStrip1.Cursor = Cursors.Hand;
+			}
+		}
+
+		private void toolStripStatusLabel1_MouseLeave(object sender, EventArgs e)
+		{
+			statusStrip1.Cursor = Cursors.Default;
+		}
+	}
 }

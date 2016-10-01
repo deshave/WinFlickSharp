@@ -1,15 +1,41 @@
-﻿using System;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 using System.Drawing;
 using System.ComponentModel;
 using Helpers;
+using System;
+using System.Text;
 
 namespace PhotoPanel
 {
-    public abstract partial class PhotoPanel : Control
+    /// <summary>
+    /// This class provides support for a custom windows forms control that displays photo thumbnails and
+    /// associated information, mainly for use in a <see cref="FlowLayoutPanel"/>.
+    /// </summary>
+    public partial class PhotoPanel : Control , INotifyPropertyChanged
     {
-    	protected Size originalsize;
-    	[Category("Appearance")]
+		protected ToolTip tt;
+		protected string tooltiptext;
+		/// <summary>
+		/// This <see cref="Delegate"/> provides support for notifying consumers that the tool tip text
+		/// for this control has changed.
+		/// </summary>
+		/// <param name="sender"><see cref="object"/> sending the event.</param>
+		/// <param name="e"><see cref="PropertyChangedEventArgs"/> of the event.</param>
+		public delegate void ToolTipChangedEventHandler(object sender, PropertyChangedEventArgs e);
+        /// <summary>
+        /// Notifies registered consumers that a property has changed.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+        /// <summary>
+        /// Notifies registered consumers that the tool tip has changed.
+        /// </summary>
+        public event ToolTipChangedEventHandler ToolTipChanged;
+
+        protected Size originalsize;
+    	/// <summary>
+        /// The <see cref="Size"/> of the original image used for the thumbnail.
+        /// </summary>
+        [Category("Misc")]
     	[Description("The size of the original image used to create the thumbnail.")]
     	public Size OriginalSize
     	{
@@ -20,9 +46,14 @@ namespace PhotoPanel
     		set
     		{
     			originalsize = value;
+                OnPropertyChanged("OriginalSize");
     		}
     	}
+
         protected Bitmap thumbnail;
+        /// <summary>
+        /// The <see cref="Bitmap"/> to draw on the control as a thumbnail.
+        /// </summary>
         [Category("Appearance")]
         [Description("The bitmap to draw as a thumbnail on the control.")]
         public Bitmap Thumbnail
@@ -34,12 +65,16 @@ namespace PhotoPanel
             set
             {
                 thumbnail = value;
-                RefreshToolTip();
+                OnPropertyChanged("Thumbnail");
             }
         }
+
         protected string filenameshort;
         protected string filename;
-        [Category("Appearance")]
+        /// <summary>
+        /// <see cref="string"/> containing the file name of the image on the control.
+        /// </summary>
+        [Category("Misc")]
         [Description("The file name of the picture on the control.")]
         public string FileName
         {
@@ -58,12 +93,16 @@ namespace PhotoPanel
                     filenameshort = value;
                 }
                 filename = value;
-                RefreshToolTip();
+                OnPropertyChanged("FileName");
+                OnToolTipChanged("FileName");
             }
         }
 
         protected string title;
-        [Category("Appearance")]
+        /// <summary>
+        /// <see cref="string"/> containing the title of the image on the control.
+        /// </summary>
+        [Category("Misc")]
         [Description("The title to draw on the control.")]
         public string Title
         {
@@ -74,12 +113,16 @@ namespace PhotoPanel
             set
             {
                 title = value;
-                RefreshToolTip();
+                OnPropertyChanged("Title");
+                OnToolTipChanged("Title");
             }
         }
 
         protected string description;
-        [Category("Appearance")]
+        /// <summary>
+        /// <see cref="string"/> containing the description of the image on the control.
+        /// </summary>
+        [Category("Misc")]
         [Description("The description to draw on the control.")]
         public string Description
         {
@@ -90,11 +133,17 @@ namespace PhotoPanel
             set
             {
                 description = value;
-                RefreshToolTip();
+                OnPropertyChanged("Description");
+                OnToolTipChanged("Description");
             }
         }
 
-        protected bool isselected;
+        protected bool isselected = false;
+        [Category("Appearance")]
+        [Description("Whether or not the control is selected.")]
+        /// <summary>
+        /// <see cref="bool"/> indicating whether or not the control is selected.
+        /// </summary>
         public bool IsSelected
         {
             get
@@ -104,10 +153,36 @@ namespace PhotoPanel
             set
             {
                 isselected = value;
+                OnPropertyChanged("IsSelected");
             }
         }
 
-        protected string strfilesizebytes;
+		protected bool isuploaded = false;
+		[Category("Appearance")]
+		[Description("Whether or not the image is uploaded.")]
+		/// <summary>
+		/// <see cref="bool"/> indicating whether or not the image is uploaded.
+		/// </summary>
+		public bool IsUploaded
+		{
+			get
+			{
+				return isuploaded;
+			}
+			set
+			{
+				isuploaded = value;
+				OnPropertyChanged("IsUploaded");
+				OnToolTipChanged("IsUploaded");
+			}
+		}
+
+		protected string strfilesizebytes;
+        [Category("Misc")]
+        [Description("The size of the image.")]
+        /// <summary>
+        /// <see cref="string"/> containing the size of the image file.
+        /// </summary>
         public string StringFileSizeBytes
         {
             get
@@ -118,11 +193,18 @@ namespace PhotoPanel
             {
                 strfilesizebytes = value;
                 filesizebytes = StringUtilities.GetBytesFromReadable(strfilesizebytes);
-                RefreshToolTip();
+                OnPropertyChanged("StringFileSizeBytes");
+                OnToolTipChanged("StringFileSizeBytes");
             }
         }
 
         protected long filesizebytes;
+
+        [Category("Misc")]
+        [Description("The size of the image file in bytes.")]
+        /// <summary>
+        /// <see cref="long"/> containing the size of the image file in bytes.
+        /// </summary>
         public long FileSizeBytes
         {
             get
@@ -133,7 +215,8 @@ namespace PhotoPanel
             {
                 filesizebytes = value;
                 strfilesizebytes = StringUtilities.GetBytesReadable(value);
-                RefreshToolTip();
+                OnPropertyChanged("FileSizeBytes");
+                OnToolTipChanged("FileSizeBytes");
             }
         }
 
@@ -154,55 +237,106 @@ namespace PhotoPanel
             }
         }
 
+        /// <summary>
+        /// Constructs a new instance of <see cref="PhotoPanel"/> with default properties.
+        /// </summary>
         public PhotoPanel()
         {
-            thumbnail = new Bitmap(120, 120);
+			tt = new ToolTip();
+			thumbnail = new Bitmap(120, 120);
             title = "Title";
             description = "Description";
-            filename = "";
-            filenameshort = "";
+            filename = "filename.jpg";
+            filenameshort = "filename.jpg";
             filesizebytes = 0;
+			//SetToolTipText();
         }
 
-        public PhotoPanel(string intitle, string desc, string file, string filebytes, Bitmap thumb, bool selected)
+        /// <summary>
+        /// Constructs a new instance of <see cref="PhotoPanel"/> with the supplied properties.
+        /// </summary>
+        /// <param name="intitle"><see cref="string"/> containing the title of the image.</param>
+        /// <param name="desc"><see cref="string"/> containing the description of the image.</param>
+        /// <param name="file"><see cref="string"/> containing the full path of the image file.</param>
+        /// <param name="filebytes"><see cref="string"/> describing the file size.</param>
+        /// <param name="thumb"><see cref="Bitmap"/> thumbnail of the image.</param>
+        public PhotoPanel(string intitle, string desc, string file, string filebytes, Bitmap thumb)
         {
-            title = intitle;
+			tt = new ToolTip();
+			title = intitle;
             description = desc;
             filename = file;
             strfilesizebytes = filebytes;
             thumbnail = thumb;
-            isselected = selected;
+			//SetToolTipText();
         }
 
-        public PhotoPanel(string intitle, string desc, string file, long filebytes, Bitmap thumb, bool selected)
+        /// <summary>
+        /// Constructs a new instance of <see cref="PhotoPanel"/> with the supplied properties.
+        /// </summary>
+        /// <param name="intitle"><see cref="string"/> containing the title of the image.</param>
+        /// <param name="desc"><see cref="string"/> containing the description of the image.</param>
+        /// <param name="file"><see cref="string"/> containing the full path of the image file.</param>
+        /// <param name="filebytes"><see cref="long"/> containing the file size in bytes.</param>
+        /// <param name="thumb"><see cref="Bitmap"/> thumbnail of the image.</param>
+        public PhotoPanel(string intitle, string desc, string file, long filebytes, Bitmap thumb)
         {
-            title = intitle;
+			tt = new ToolTip();
+			title = intitle;
             description = desc;
             filename = file;
             filesizebytes = filebytes;
             thumbnail = thumb;
-            isselected = selected;
+			//SetToolTipText();
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+		protected virtual void SetToolTipText()
+		{
+			Console.WriteLine("Base:SetToolTipText()");
+			StringBuilder sb = new StringBuilder();
+			if (!string.IsNullOrEmpty(title)) sb.AppendLine(title);
+			if (!string.IsNullOrEmpty(description)) sb.AppendLine(description);
+			sb.AppendLine(filenameshort);
+			sb.AppendLine(originalsize.Width + "x" + originalsize.Height);
+			sb.AppendLine(isuploaded ? "Uploaded" : "Not Uploaded");
+			tooltiptext = sb.ToString();
+		}
+
+		protected override void OnPaint(PaintEventArgs e)
         {
-            var titleFont = new Font("Arial", 11);
-            var textFont = new Font("Arial", 9);
-            var textColor = new SolidBrush(this.ForeColor);
-            var b = new SolidBrush(this.BackColor);
+			var font = this.Font;
+			var titleFont = new Font(font.FontFamily.Name, font.Size + 2, font.Style, font.Unit, font.GdiCharSet, font.GdiVerticalFont);
+			var foregroundbrush = new SolidBrush(this.ForeColor);
+            var backgroundbrush = new SolidBrush(this.BackColor);
             base.OnPaint(e);
-            if (IsSelected)
+            if (isselected)
             {
-                e.Graphics.FillRectangle(textColor, 0, 0, Width, Height);
-                e.Graphics.FillRectangle(b, 2, 2, Width - 4, Height - 4);
+                e.Graphics.FillRectangle(foregroundbrush, 0, 0, Width, Height);
+                e.Graphics.FillRectangle(backgroundbrush, 2, 2, Width - 4, Height - 4);
             }
             e.Graphics.DrawImage(thumbnail, 5, 5, 120, 120);
-            e.Graphics.DrawString(Title, titleFont, textColor, 125, 2);
-            e.Graphics.DrawString(Description, textFont, textColor, 126, 16);
-            e.Graphics.DrawString(filenameshort, textFont, textColor, 126, 30);
-            e.Graphics.DrawString(strfilesizebytes + "   " + originalsize.Width + "x" + originalsize.Height, textFont, textColor, 126, 44);
+			if (isuploaded)
+			{
+				e.Graphics.DrawString("▲", this.Font, new SolidBrush(Color.Green), 111, 5);
+			}
+			else
+			{
+				e.Graphics.DrawString("▲", this.Font, new SolidBrush(Color.Red), 111, 5);
+			}
+            e.Graphics.DrawString(tooltiptext, this.Font, foregroundbrush, 125, 2);
         }
 
-        protected abstract void RefreshToolTip();
-    }
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+			this.Invalidate();
+        }
+
+        protected virtual void OnToolTipChanged(string name)
+        {
+			SetToolTipText();
+			tt.SetToolTip(this, tooltiptext);
+			ToolTipChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+	}
 }

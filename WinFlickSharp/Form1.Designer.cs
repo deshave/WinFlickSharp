@@ -39,6 +39,7 @@
 			this.selectAllMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.clearAllMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.clearSelectedMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.regenerateThumbnailsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.flickrMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.authenticateMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.enterCodeMenuItem = new System.Windows.Forms.ToolStripTextBox();
@@ -70,8 +71,8 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.uploadWorker = new System.ComponentModel.BackgroundWorker();
 			this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-			this.toolStripProgressBar1 = new System.Windows.Forms.ToolStripProgressBar();
 			this.toolStripStatusLabel3 = new System.Windows.Forms.ToolStripStatusLabel();
+			this.toolStripProgressBar1 = new System.Windows.Forms.ToolStripProgressBar();
 			this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
 			this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
 			this.populateWorker = new System.ComponentModel.BackgroundWorker();
@@ -85,11 +86,13 @@
 			this.selectAllToolStrip = new System.Windows.Forms.ToolStripMenuItem();
 			this.clearAllToolStrip = new System.Windows.Forms.ToolStripMenuItem();
 			this.clearSelectedToolStrip = new System.Windows.Forms.ToolStripMenuItem();
+			this.regenerateThumbnailsToolStrip = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			this.toolStripDropDownButtonFlickr = new System.Windows.Forms.ToolStripDropDownButton();
 			this.authenticateToolStrip = new System.Windows.Forms.ToolStripMenuItem();
 			this.enterCodeToolStrip = new System.Windows.Forms.ToolStripTextBox();
 			this.uploadSelectedToolStrip = new System.Windows.Forms.ToolStripMenuItem();
+			this.deauthenticateToolStrip = new System.Windows.Forms.ToolStripMenuItem();
 			this.uploadAllToolStrip = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
 			this.toolStripDropDownButtonHelp = new System.Windows.Forms.ToolStripDropDownButton();
@@ -98,8 +101,9 @@
 			this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
 			this.generateThumbsWorker = new System.ComponentModel.BackgroundWorker();
 			this.imageList2 = new System.Windows.Forms.ImageList(this.components);
-			this.regenerateThumbnailsToolStrip = new System.Windows.Forms.ToolStripMenuItem();
-			this.regenerateThumbnailsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.fillQueueBackgroundWorker = new System.ComponentModel.BackgroundWorker();
+			this.emptyQueueBackgroundWorker = new System.ComponentModel.BackgroundWorker();
+			this.timerProgress = new System.Windows.Forms.Timer(this.components);
 			this.menuStrip1.SuspendLayout();
 			this.contextMenuStrip1.SuspendLayout();
 			this.groupBox1.SuspendLayout();
@@ -116,7 +120,7 @@
             this.helpMenuItem});
 			this.menuStrip1.Location = new System.Drawing.Point(0, 0);
 			this.menuStrip1.Name = "menuStrip1";
-			this.menuStrip1.Size = new System.Drawing.Size(1126, 24);
+			this.menuStrip1.Size = new System.Drawing.Size(1125, 24);
 			this.menuStrip1.TabIndex = 0;
 			this.menuStrip1.Text = "menuStrip1";
 			this.menuStrip1.Visible = false;
@@ -195,6 +199,13 @@
 			this.clearSelectedMenuItem.Text = "Clear Selected";
 			this.clearSelectedMenuItem.Click += new System.EventHandler(this.clearSelectedMenuItem_Click);
 			// 
+			// regenerateThumbnailsMenuItem
+			// 
+			this.regenerateThumbnailsMenuItem.Name = "regenerateThumbnailsMenuItem";
+			this.regenerateThumbnailsMenuItem.Size = new System.Drawing.Size(199, 22);
+			this.regenerateThumbnailsMenuItem.Text = "Regenerate Thumbnails";
+			this.regenerateThumbnailsMenuItem.Click += new System.EventHandler(this.regenerateThumbnailsMenuItem_Click);
+			// 
 			// flickrMenuItem
 			// 
 			this.flickrMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -222,6 +233,7 @@
 			this.enterCodeMenuItem.Size = new System.Drawing.Size(100, 23);
 			this.enterCodeMenuItem.Text = "Enter Code";
 			this.enterCodeMenuItem.KeyUp += new System.Windows.Forms.KeyEventHandler(this.enterCodeMenuItem_KeyUp);
+			this.enterCodeMenuItem.Click += new System.EventHandler(this.enterCodeMenuItem_Click);
 			// 
 			// uploadSelectedMenuItem
 			// 
@@ -252,7 +264,7 @@
 			// 
 			this.aboutMenuItem.Name = "aboutMenuItem";
 			this.aboutMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
-			this.aboutMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.aboutMenuItem.Size = new System.Drawing.Size(148, 22);
 			this.aboutMenuItem.Text = "A&bout";
 			this.aboutMenuItem.Click += new System.EventHandler(this.aboutMenuItem_Click);
 			// 
@@ -314,7 +326,7 @@
 			this.groupBox1.Controls.Add(this.label3);
 			this.groupBox1.Controls.Add(this.textBoxTitle);
 			this.groupBox1.Controls.Add(this.label1);
-			this.groupBox1.Location = new System.Drawing.Point(863, 52);
+			this.groupBox1.Location = new System.Drawing.Point(862, 28);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(251, 277);
 			this.groupBox1.TabIndex = 3;
@@ -484,19 +496,12 @@
             this.toolStripProgressBar1,
             this.toolStripStatusLabel1,
             this.toolStripStatusLabel2});
-			this.statusStrip1.Location = new System.Drawing.Point(0, 469);
+			this.statusStrip1.Location = new System.Drawing.Point(0, 454);
 			this.statusStrip1.Name = "statusStrip1";
 			this.statusStrip1.ShowItemToolTips = true;
-			this.statusStrip1.Size = new System.Drawing.Size(1126, 26);
+			this.statusStrip1.Size = new System.Drawing.Size(1125, 26);
 			this.statusStrip1.TabIndex = 4;
 			this.statusStrip1.Text = "statusStrip1";
-			// 
-			// toolStripProgressBar1
-			// 
-			this.toolStripProgressBar1.AutoToolTip = true;
-			this.toolStripProgressBar1.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
-			this.toolStripProgressBar1.Name = "toolStripProgressBar1";
-			this.toolStripProgressBar1.Size = new System.Drawing.Size(200, 20);
 			// 
 			// toolStripStatusLabel3
 			// 
@@ -508,6 +513,13 @@
 			this.toolStripStatusLabel3.Name = "toolStripStatusLabel3";
 			this.toolStripStatusLabel3.Size = new System.Drawing.Size(260, 21);
 			// 
+			// toolStripProgressBar1
+			// 
+			this.toolStripProgressBar1.AutoToolTip = true;
+			this.toolStripProgressBar1.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+			this.toolStripProgressBar1.Name = "toolStripProgressBar1";
+			this.toolStripProgressBar1.Size = new System.Drawing.Size(200, 20);
+			// 
 			// toolStripStatusLabel1
 			// 
 			this.toolStripStatusLabel1.BorderSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)((((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Top) 
@@ -516,7 +528,7 @@
 			this.toolStripStatusLabel1.BorderStyle = System.Windows.Forms.Border3DStyle.SunkenInner;
 			this.toolStripStatusLabel1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
 			this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-			this.toolStripStatusLabel1.Size = new System.Drawing.Size(580, 21);
+			this.toolStripStatusLabel1.Size = new System.Drawing.Size(610, 21);
 			this.toolStripStatusLabel1.Spring = true;
 			this.toolStripStatusLabel1.Text = "Ready.";
 			this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -539,14 +551,6 @@
 			this.toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 			this.toolStripStatusLabel2.ToolTipText = "You are not authenticated.";
 			// 
-			// populateWorker
-			// 
-			this.populateWorker.WorkerReportsProgress = true;
-			this.populateWorker.WorkerSupportsCancellation = true;
-			this.populateWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.populateWorker_DoWork);
-			this.populateWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.populateWorker_ProgressChanged);
-			this.populateWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.populateWorker_RunWorkerCompleted);
-			// 
 			// toolStrip1
 			// 
 			this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -560,7 +564,7 @@
             this.toolStripTextBoxLocation});
 			this.toolStrip1.Location = new System.Drawing.Point(0, 0);
 			this.toolStrip1.Name = "toolStrip1";
-			this.toolStrip1.Size = new System.Drawing.Size(1126, 25);
+			this.toolStrip1.Size = new System.Drawing.Size(1125, 25);
 			this.toolStrip1.TabIndex = 5;
 			this.toolStrip1.Text = "toolStrip1";
 			// 
@@ -646,6 +650,14 @@
 			this.clearSelectedToolStrip.Text = "Clear Selected";
 			this.clearSelectedToolStrip.Click += new System.EventHandler(this.clearSelectedMenuItem_Click);
 			// 
+			// regenerateThumbnailsToolStrip
+			// 
+			this.regenerateThumbnailsToolStrip.Enabled = false;
+			this.regenerateThumbnailsToolStrip.Name = "regenerateThumbnailsToolStrip";
+			this.regenerateThumbnailsToolStrip.Size = new System.Drawing.Size(199, 22);
+			this.regenerateThumbnailsToolStrip.Text = "Regenerate Thumbnails";
+			this.regenerateThumbnailsToolStrip.Click += new System.EventHandler(this.regenerateThumbnailsMenuItem_Click);
+			// 
 			// toolStripSeparator2
 			// 
 			this.toolStripSeparator2.Name = "toolStripSeparator2";
@@ -657,8 +669,8 @@
             this.authenticateToolStrip,
             this.enterCodeToolStrip,
             this.uploadSelectedToolStrip,
+            this.deauthenticateToolStrip,
             this.uploadAllToolStrip});
-			this.toolStripDropDownButtonFlickr.Enabled = false;
 			this.toolStripDropDownButtonFlickr.Image = ((System.Drawing.Image)(resources.GetObject("toolStripDropDownButtonFlickr.Image")));
 			this.toolStripDropDownButtonFlickr.ImageTransparentColor = System.Drawing.Color.Magenta;
 			this.toolStripDropDownButtonFlickr.Name = "toolStripDropDownButtonFlickr";
@@ -670,7 +682,7 @@
 			this.authenticateToolStrip.Enabled = false;
 			this.authenticateToolStrip.Image = ((System.Drawing.Image)(resources.GetObject("authenticateToolStrip.Image")));
 			this.authenticateToolStrip.Name = "authenticateToolStrip";
-			this.authenticateToolStrip.Size = new System.Drawing.Size(160, 22);
+			this.authenticateToolStrip.Size = new System.Drawing.Size(162, 22);
 			this.authenticateToolStrip.Text = "Authenticate";
 			this.authenticateToolStrip.Click += new System.EventHandler(this.authenticateMenuItem_Click);
 			// 
@@ -681,22 +693,31 @@
 			this.enterCodeToolStrip.Size = new System.Drawing.Size(100, 23);
 			this.enterCodeToolStrip.Text = "Enter Code";
 			this.enterCodeToolStrip.KeyUp += new System.Windows.Forms.KeyEventHandler(this.enterCodeMenuItem_KeyUp);
+			this.enterCodeToolStrip.Click += new System.EventHandler(this.enterCodeToolStrip_Click);
 			// 
 			// uploadSelectedToolStrip
 			// 
 			this.uploadSelectedToolStrip.Enabled = false;
 			this.uploadSelectedToolStrip.Image = ((System.Drawing.Image)(resources.GetObject("uploadSelectedToolStrip.Image")));
 			this.uploadSelectedToolStrip.Name = "uploadSelectedToolStrip";
-			this.uploadSelectedToolStrip.Size = new System.Drawing.Size(160, 22);
+			this.uploadSelectedToolStrip.Size = new System.Drawing.Size(162, 22);
 			this.uploadSelectedToolStrip.Text = "Upload Selected";
 			this.uploadSelectedToolStrip.Click += new System.EventHandler(this.uploadSelectedMenuItem_Click);
+			// 
+			// deauthenticateToolStrip
+			// 
+			this.deauthenticateToolStrip.Enabled = false;
+			this.deauthenticateToolStrip.Name = "deauthenticateToolStrip";
+			this.deauthenticateToolStrip.Size = new System.Drawing.Size(162, 22);
+			this.deauthenticateToolStrip.Text = "Log Out of Flickr";
+			this.deauthenticateToolStrip.Click += new System.EventHandler(this.deauthenticateToolStrip_Click);
 			// 
 			// uploadAllToolStrip
 			// 
 			this.uploadAllToolStrip.Enabled = false;
 			this.uploadAllToolStrip.Image = ((System.Drawing.Image)(resources.GetObject("uploadAllToolStrip.Image")));
 			this.uploadAllToolStrip.Name = "uploadAllToolStrip";
-			this.uploadAllToolStrip.Size = new System.Drawing.Size(160, 22);
+			this.uploadAllToolStrip.Size = new System.Drawing.Size(162, 22);
 			this.uploadAllToolStrip.Text = "Upload All";
 			this.uploadAllToolStrip.Click += new System.EventHandler(this.uploadAllMenuItem_Click);
 			// 
@@ -719,7 +740,7 @@
 			// 
 			this.aboutToolStrip.Image = global::WinFlickSharp.Properties.Resources.profile;
 			this.aboutToolStrip.Name = "aboutToolStrip";
-			this.aboutToolStrip.Size = new System.Drawing.Size(152, 22);
+			this.aboutToolStrip.Size = new System.Drawing.Size(107, 22);
 			this.aboutToolStrip.Text = "About";
 			this.aboutToolStrip.Click += new System.EventHandler(this.aboutMenuItem_Click);
 			// 
@@ -739,19 +760,11 @@
 			this.flowLayoutPanel1.AutoScroll = true;
 			this.flowLayoutPanel1.BackColor = System.Drawing.SystemColors.Control;
 			this.flowLayoutPanel1.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
-			this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 52);
+			this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 28);
 			this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-			this.flowLayoutPanel1.Size = new System.Drawing.Size(845, 418);
+			this.flowLayoutPanel1.Size = new System.Drawing.Size(844, 417);
 			this.flowLayoutPanel1.TabIndex = 0;
 			this.flowLayoutPanel1.Click += new System.EventHandler(this.flowLayoutPanel_Click);
-			// 
-			// generateThumbsWorker
-			// 
-			this.generateThumbsWorker.WorkerReportsProgress = true;
-			this.generateThumbsWorker.WorkerSupportsCancellation = true;
-			this.generateThumbsWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.GenerateThumbsWorker_DoWork);
-			this.generateThumbsWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.GenerateThumbsWorker_ProgressChanged);
-			this.generateThumbsWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.GenerateThumbsWorker_RunWorkerCompleted);
 			// 
 			// imageList2
 			// 
@@ -760,29 +773,32 @@
 			this.imageList2.Images.SetKeyName(0, "delete.ICO");
 			this.imageList2.Images.SetKeyName(1, "125_31.ico");
 			// 
-			// regenerateThumbnailsToolStrip
+			// fillQueueBackgroundWorker
 			// 
-			this.regenerateThumbnailsToolStrip.Name = "regenerateThumbnailsToolStrip";
-			this.regenerateThumbnailsToolStrip.Size = new System.Drawing.Size(199, 22);
-			this.regenerateThumbnailsToolStrip.Text = "Regenerate Thumbnails";
-			this.regenerateThumbnailsToolStrip.Click += new System.EventHandler(this.regenerateThumbnailsMenuItem_Click);
+			this.fillQueueBackgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.fillQueueBackgroundWorker_DoWork);
+			this.fillQueueBackgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.fillQueueBackgroundWorker_RunWorkerCompleted);
 			// 
-			// regenerateThumbnailsMenuItem
+			// emptyQueueBackgroundWorker
 			// 
-			this.regenerateThumbnailsMenuItem.Name = "regenerateThumbnailsMenuItem";
-			this.regenerateThumbnailsMenuItem.Size = new System.Drawing.Size(199, 22);
-			this.regenerateThumbnailsMenuItem.Text = "Regenerate Thumbnails";
-			this.regenerateThumbnailsMenuItem.Click += new System.EventHandler(this.regenerateThumbnailsMenuItem_Click);
+			this.emptyQueueBackgroundWorker.WorkerReportsProgress = true;
+			this.emptyQueueBackgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.emptyQueueBackgroundWorker_DoWork);
+			this.emptyQueueBackgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.emptyQueueBackgroundWorker_ProgressChanged);
+			this.emptyQueueBackgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.emptyQueueBackgroundWorker_RunWorkerCompleted);
+			// 
+			// timerProgress
+			// 
+			this.timerProgress.Interval = 500;
+			this.timerProgress.Tick += new System.EventHandler(this.timerProgress_Tick);
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1126, 495);
+			this.ClientSize = new System.Drawing.Size(1125, 480);
+			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.flowLayoutPanel1);
 			this.Controls.Add(this.toolStrip1);
 			this.Controls.Add(this.statusStrip1);
-			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.menuStrip1);
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.KeyPreview = true;
@@ -878,6 +894,10 @@
 		private System.Windows.Forms.ToolStripMenuItem uploadAllMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem regenerateThumbnailsToolStrip;
 		private System.Windows.Forms.ToolStripMenuItem regenerateThumbnailsMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem deauthenticateToolStrip;
+		private System.ComponentModel.BackgroundWorker fillQueueBackgroundWorker;
+		private System.ComponentModel.BackgroundWorker emptyQueueBackgroundWorker;
+		private System.Windows.Forms.Timer timerProgress;
 	}
 }
 

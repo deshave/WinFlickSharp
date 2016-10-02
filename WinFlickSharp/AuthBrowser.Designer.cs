@@ -28,46 +28,43 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.webControl1 = new Awesomium.Windows.Forms.WebControl(this.components);
-            this.webSessionProvider1 = new Awesomium.Windows.Forms.WebSessionProvider(this.components);
-            this.SuspendLayout();
-            // 
-            // webControl1
-            // 
-            this.webControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.webControl1.Location = new System.Drawing.Point(0, 0);
-            this.webControl1.Size = new System.Drawing.Size(1075, 525);
-            this.webControl1.TabIndex = 0;
-            // 
-            // webSessionProvider1
-            // 
-            this.webSessionProvider1.DataPath = "C:\\Users\\Dave\\AppData\\Roaming\\Awesomium Technologies LLC";
-            this.webSessionProvider1.Views.Add(this.webControl1);
-            // 
-            // AuthBrowser
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1075, 525);
-            this.ControlBox = false;
-            this.Controls.Add(this.webControl1);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
-            this.Name = "AuthBrowser";
-            this.ShowIcon = false;
-            this.ShowInTaskbar = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "AuthBrowser";
-            this.ResumeLayout(false);
+			this.components = new System.ComponentModel.Container();
+			this.webSessionProvider1 = new Awesomium.Windows.Forms.WebSessionProvider(this.components);
+			this.webBrowser1 = new System.Windows.Forms.WebBrowser();
+			this.SuspendLayout();
+			// 
+			// webSessionProvider1
+			// 
+			this.webSessionProvider1.DataPath = "%USERPROFILE%\\AppData\\Roaming\\Awesomium Technologies LLC";
+			// 
+			// webBrowser1
+			// 
+			this.webBrowser1.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.webBrowser1.Location = new System.Drawing.Point(0, 0);
+			this.webBrowser1.MinimumSize = new System.Drawing.Size(20, 20);
+			this.webBrowser1.Name = "webBrowser1";
+			this.webBrowser1.Size = new System.Drawing.Size(1075, 525);
+			this.webBrowser1.TabIndex = 0;
+			// 
+			// AuthBrowser
+			// 
+			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.ClientSize = new System.Drawing.Size(1075, 525);
+			this.ControlBox = false;
+			this.Controls.Add(this.webBrowser1);
+			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+			this.Name = "AuthBrowser";
+			this.ShowIcon = false;
+			this.ShowInTaskbar = false;
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+			this.Text = "AuthBrowser";
+			this.ResumeLayout(false);
 
         }
 
         #endregion
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Awesomium.Windows.Forms.WebControl webControl1;
         private Awesomium.Windows.Forms.WebSessionProvider webSessionProvider1;
-    }
+		private System.Windows.Forms.WebBrowser webBrowser1;
+	}
 }

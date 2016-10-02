@@ -15,13 +15,17 @@ namespace WinFlickSharp
     /// </summary>
     public partial class AuthBrowser : Form
     {
+		private Uri uri;
         /// <summary>
         /// <see cref="Uri"/> containing the location of the remote resource.
         /// </summary>
-        public Uri Url
+        public Uri Uri
         {
-            get { return Url; }
-            set { Url = value; }
+            get { return uri; }
+            set {
+				uri = value;
+				this.webBrowser1.Navigate(value);
+			}
         }
 
         /// <summary>
